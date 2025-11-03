@@ -1,0 +1,46 @@
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+
+export default function Menu() {
+  return (
+    <View style={styles.menu}>
+      <TouchableOpacity style={styles.item}>
+        <Ionicons name="home" size={24} color="white" />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.item}>
+        <Ionicons name="search" size={24} color="white" />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.item}>
+        <Ionicons name="cart" size={24} color="white" />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.item}>
+        <Ionicons name="person" size={24} color="white" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  menu: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 70,
+    backgroundColor: 'red',
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    alignItems: 'center',
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    elevation: 10, 
+    shadowColor: '#000', 
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: -2 },
+    shadowRadius: 5,
+  },
+  item: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
