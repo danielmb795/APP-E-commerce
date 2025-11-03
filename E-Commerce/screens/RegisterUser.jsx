@@ -125,8 +125,8 @@ export default function RegisterUser() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     width: '100%',
+    height: '100%',
     backgroundColor: '#121212',
     justifyContent: 'center',
     alignItems: 'center',

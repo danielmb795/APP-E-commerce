@@ -1,6 +1,6 @@
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
-
 
 import Home from './screens/Home'
 import Login from './screens/Login'
@@ -10,7 +10,7 @@ export default function App() {
   return (
     <View style={styles.container}>
   
-    <RegisterUser/>
+    <Login/>
     </View>
   );
 }
@@ -21,5 +21,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-  },
+  }
 });
