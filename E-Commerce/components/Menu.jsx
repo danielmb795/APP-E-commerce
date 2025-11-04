@@ -5,16 +5,16 @@ export default function Menu() {
   return (
     <View style={styles.menu}>
       <TouchableOpacity style={styles.item}>
-        <Ionicons name="home" size={24} color="white" />
+        <Ionicons name="home" size={24} color="white" style ={styles.corItem} />
       </TouchableOpacity>
       <TouchableOpacity style={styles.item}>
-        <Ionicons name="search" size={24} color="white" />
+        <Ionicons name="search" size={24} color="white" style ={styles.corItem} />
       </TouchableOpacity>
       <TouchableOpacity style={styles.item}>
-        <Ionicons name="cart" size={24} color="white" />
+        <Ionicons name="cart" size={24} color="white" style ={styles.corItem} />
       </TouchableOpacity>
       <TouchableOpacity style={styles.item}>
-        <Ionicons name="person" size={24} color="white" />
+        <Ionicons name="person" size={24} color="white" style ={styles.corItem} />
       </TouchableOpacity>
     </View>
   );
@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 70,
-    backgroundColor: 'red',
+    backgroundColor: '#1e1e1e',
     flexDirection: 'row', 
     justifyContent: 'space-around', 
     alignItems: 'center',
@@ -46,5 +46,9 @@ const styles = StyleSheet.create({
   item: {
     alignItems: 'center',
     justifyContent: 'center',
+    color: "#6366f1"
   },
+  corItem: {
+    color: "#6366f1"
+  }
 });

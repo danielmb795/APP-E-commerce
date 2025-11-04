@@ -1,7 +1,10 @@
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
 import Menu from '../components/Menu';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
+const usuario = "UserTeste"
 
 const produtos = [
   { id: '1', nome: 'Monitor', preco: 79.90, imagem: 'https://via.placeholder.com/150' },
@@ -29,7 +32,12 @@ export default function Home() {
   return (
     <>
     <View style={styles.topo}>
-      <MaterialIcons name="exit-to-app" size={24} color="black" />
+      <View style={styles.alinhamento}>
+      <Ionicons name="person" style={styles.user} />
+      <Text style={styles.titulo}>Seja bem vindo {usuario} </Text>
+      
+      <MaterialIcons name="exit-to-app" style={styles.exit}/>
+      </View>
     </View>
 
     <View style={styles.container}>
@@ -47,29 +55,46 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  topo:{
+   topo: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     height: 80,
-    backgroundColor: 'white',
+    backgroundColor: '#121212',
     justifyContent: 'center',
-    alignItems: 'center',
     zIndex: 10,
     borderWidth: 2,
-    gap: 10
   },
-  image:{
 
+  alinhamento: {
+    flexDirection: 'row',     
+    alignItems: 'center',          
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    width: '100%',
   },
-  exit:{
 
+  user: {
+    color: "#6366f1",
+    fontSize: 40,
+  },
+
+  titulo: {
+    color: '#6366f1',
+    fontSize: 16,
+    textAlign: 'center',
+    flex: 1,
+  },
+
+  exit: {
+    color: "#6366f1",
+    fontSize: 40,
   },
   container: {
     width: '100%',
     height: '100%',
-    backgroundColor: 'green',
+    backgroundColor: '#121212',
   },
   lista: {
     paddingTop: 90,
@@ -77,7 +102,7 @@ const styles = StyleSheet.create({
   },
   produto: {
     flexDirection: 'row',
-    backgroundColor: 'red',
+    backgroundColor: '#1e1e1e',
     width: '90%',
     marginLeft: '5%',
     marginBottom: 15,
