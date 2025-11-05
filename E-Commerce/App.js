@@ -6,23 +6,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import Home from './screens/Home'
 import Login from './screens/Login'
 import RegisterUser from './screens/RegisterUser'
+import Description from './screens/Description';
+import Router from './routes/router';
 
-// import { NavigationContainer } from '@react-navigation/native'
-// const Stack = createNativeStackNavigator();
-
-  export default function App() {
+export default function App() {
     return (
-      // <NavigationContainer>
-      //   <Stack.Navigator initialRouteName="Home">
-      //     <Stack.Screen name="Home" component={Home}/>
-      //     <Stack.Screen name="Login" component={Login} />
-      //   </Stack.Navigator>
-      // </NavigationContainer>
-      <View>
-        <Home/>
-      </View>
-
-    );
+      <Router />
+    )
   }
 
   const styles = StyleSheet.create({

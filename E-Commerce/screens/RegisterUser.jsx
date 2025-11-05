@@ -1,129 +1,178 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 export default function RegisterUser() {
+
+  const navigation = useNavigation();
+
   return (
-    <View style={styles.container}>
-      <View style={styles.cadastroBox}>
-        
-        <View style={styles.header}>
-          <Ionicons name="person-add" size={40} color="#6366f1" />
-          <Text style={styles.title}>Criar Conta</Text>
-          <Text style={styles.subtitle}>Junte-se a nós</Text>
-        </View>
-
-        <View style={styles.form}>
+    <ScrollView 
+      style={styles.scrollView}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.container}>
+        <View style={styles.cadastroBox}>
           
-          <View style={styles.inputContainer}>
-            <Ionicons 
-              name="person-outline" 
-              size={20} 
-              color="#6b7280" 
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Nome completo"
-              placeholderTextColor="#9ca3af"
-            />
+          <View style={styles.header}>
+            <Ionicons name="person-add" size={40} color="#6366f1" />
+            <Text style={styles.title}>Criar Conta</Text>
+            <Text style={styles.subtitle}>Junte-se a nós</Text>
           </View>
 
-          <View style={styles.inputContainer}>
-            <Ionicons 
-              name="mail-outline" 
-              size={20} 
-              color="#6b7280" 
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#9ca3af"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-
-          <View style={styles.inputContainer}>
-            <Ionicons 
-              name="lock-closed-outline" 
-              size={20}     
-              color="#6b7280" 
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Senha"
-              placeholderTextColor="#9ca3af"
-              secureTextEntry
-            />
-            <TouchableOpacity style={styles.eyeIcon}>
+          <View style={styles.form}>
+            
+            <View style={styles.inputContainer}>
               <Ionicons 
-                name="eye-outline" 
+                name="person-outline" 
                 size={20} 
                 color="#6b7280" 
+                style={styles.inputIcon}
               />
-            </TouchableOpacity>
-          </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Nome completo"
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Ionicons 
-              name="lock-closed-outline" 
-              size={20} 
-              color="#6b7280" 
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Confirmar senha"
-              placeholderTextColor="#9ca3af"
-              secureTextEntry
-            />
-            <TouchableOpacity style={styles.eyeIcon}>
+            <View style={styles.inputContainer}>
               <Ionicons 
-                name="eye-outline" 
+                name="mail-outline" 
                 size={20} 
                 color="#6b7280" 
+                style={styles.inputIcon}
               />
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor="#9ca3af"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons 
+                name="call-outline" 
+                size={20} 
+                color="#6b7280" 
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Telefone"
+                placeholderTextColor="#9ca3af"
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons 
+                name="location-outline" 
+                size={20} 
+                color="#6b7280" 
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Endereço completo"
+                placeholderTextColor="#9ca3af"
+                multiline
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons 
+                name="lock-closed-outline" 
+                size={20}     
+                color="#6b7280" 
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Senha"
+                placeholderTextColor="#9ca3af"
+                secureTextEntry
+              />
+              <TouchableOpacity style={styles.eyeIcon}>
+                <Ionicons 
+                  name="eye-outline" 
+                  size={20} 
+                  color="#6b7280" 
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons 
+                name="lock-closed-outline" 
+                size={20} 
+                color="#6b7280" 
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Confirmar senha"
+                placeholderTextColor="#9ca3af"
+                secureTextEntry
+              />
+              <TouchableOpacity style={styles.eyeIcon}>
+                <Ionicons 
+                  name="eye-outline" 
+                  size={20} 
+                  color="#6b7280" 
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.termosContainer}>
+              <TouchableOpacity style={styles.checkbox}>
+                <Ionicons name="square-outline" size={20} color="#6b7280" />
+              </TouchableOpacity>
+              <Text style={styles.termosText}>
+                Concordo com os <Text style={styles.termosLink}>Termos de Serviço</Text> e <Text style={styles.termosLink}>Política de Privacidade</Text>
+              </Text>
+            </View>
+
+            <TouchableOpacity style={styles.botao}>
+              <Text style={styles.textoBotao}>Cadastrar</Text>
             </TouchableOpacity>
-          </View>
 
-          <View style={styles.termosContainer}>
-            <TouchableOpacity style={styles.checkbox}>
-              <Ionicons name="square-outline" size={20} color="#6b7280" />
-            </TouchableOpacity>
-            <Text style={styles.termosText}>
-              Concordo com os <Text style={styles.termosLink}>Termos de Serviço</Text> e <Text style={styles.termosLink}>Política de Privacidade</Text>
-            </Text>
-          </View>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>ou</Text>
+              <View style={styles.dividerLine} />
+            </View>
 
-          <TouchableOpacity style={styles.botao}>
-            <Text style={styles.textoBotao}>Cadastrar</Text>
-          </TouchableOpacity>
-
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>
-              Já tem uma conta?{' '}
-            </Text>
-            <TouchableOpacity>
-              <Text style={styles.loginLink}>Fazer login</Text>
-            </TouchableOpacity>
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>
+                Já tem uma conta?{' '}
+              </Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("Login")}
+              >
+                <Text style={styles.loginLink}>Fazer login</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#121212',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
   container: {
     width: '100%',
     height: '100%',
@@ -131,7 +180,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    top: 10
   },
   cadastroBox: {
     backgroundColor: '#1e1e1e',
@@ -147,6 +195,7 @@ const styles = StyleSheet.create({
     elevation: 8,
     borderWidth: 1,
     borderColor: '#333',
+    marginVertical: 20,
   },
   header: {
     alignItems: 'center',
@@ -175,16 +224,18 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     borderWidth: 1,
     borderColor: '#374151',
+    minHeight: 50,
   },
   inputIcon: {
     padding: 15,
   },
   input: {
     flex: 1,
-    height: 50,
     fontSize: 16,
     color: '#fff',
     paddingRight: 15,
+    paddingVertical: 15,
+    minHeight: 50,
   },
   eyeIcon: {
     padding: 15,

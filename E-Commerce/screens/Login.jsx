@@ -1,9 +1,15 @@
 import React from 'react';
 import {View, Text, StyleSheet, TextInput, TouchableOpacity,} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 export default function Login() {
+
+  const navigation = useNavigation();
+
   return (
+
+
     <View style={styles.container}>
       <View style={styles.loginBox}>
         <View style={styles.header}>
@@ -49,34 +55,29 @@ export default function Login() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.botao}>
+          <TouchableOpacity style={styles.botao}
+            onPress={() => navigation.navigate('Home')}
+          >
             <Text style={styles.textoBotao}>Entrar</Text>
           </TouchableOpacity>
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou</Text>
             <View style={styles.dividerLine} />
-          </View>
-
-          <View style={styles.socialContainer}>
-            <TouchableOpacity style={styles.socialButton}>
-              <Ionicons name="logo-google" size={20} color="#db4437" />
-              <Text style={styles.socialText}>Google</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.socialButton}>
-              <Ionicons name="logo-facebook" size={20} color="#1877f2" />
-              <Text style={styles.socialText}>Facebook</Text>
-            </TouchableOpacity>
           </View>
 
           <View style={styles.registroContainer}>
             <Text style={styles.registro}>
               Não tem uma conta?{' '}
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity
+            
+            >
+              <TouchableOpacity 
+                onPress={() => navigation.navigate("RegisterUser")}
+              >
               <Text style={styles.link}>Cadastre-se</Text>
+              </TouchableOpacity>
             </TouchableOpacity>
           </View>
         </View>
@@ -183,29 +184,6 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     paddingHorizontal: 15,
     fontSize: 14,
-  },
-  socialContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 25,
-  },
-  socialButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#2d2d2d',
-    padding: 12,
-    borderRadius: 10,
-    marginHorizontal: 5,
-    borderWidth: 1,
-    borderColor: '#374151',
-  },
-  socialText: {
-    color: '#fff',
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '500',
   },
   registroContainer: {
     flexDirection: 'row',

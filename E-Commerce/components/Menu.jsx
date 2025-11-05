@@ -1,20 +1,26 @@
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
 
 export default function Menu() {
+
+  const navigation = useNavigation()
+
   return (
     <View style={styles.menu}>
       <TouchableOpacity style={styles.item}>
-        <Ionicons name="home" size={24} color="white" style ={styles.corItem} />
+        <Ionicons name="home" size={35}  style ={styles.corItem} />
       </TouchableOpacity>
       <TouchableOpacity style={styles.item}>
-        <Ionicons name="search" size={24} color="white" style ={styles.corItem} />
+        <Ionicons name="search" size={35} style ={styles.corItem} />
       </TouchableOpacity>
       <TouchableOpacity style={styles.item}>
-        <Ionicons name="cart" size={24} color="white" style ={styles.corItem} />
+        <Ionicons name="cart" size={35} style ={styles.corItem} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.item}>
-        <Ionicons name="person" size={24} color="white" style ={styles.corItem} />
+      <TouchableOpacity style={styles.item}
+        onPress ={() => navigation.navigate("Description")}
+      >
+        <Ionicons name="person" size={35}  style ={styles.corItem} />
       </TouchableOpacity>
     </View>
   );
@@ -34,7 +40,7 @@ const styles = StyleSheet.create({
     // borderTopLeftRadius: 15,
     // borderTopRightRadius: 15,
     borderRadius: 40,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: 'white',
     elevation: 10, 
     shadowColor: '#000', 
@@ -46,9 +52,10 @@ const styles = StyleSheet.create({
   item: {
     alignItems: 'center',
     justifyContent: 'center',
-    color: "#6366f1"
+    color: "#6366f1",
   },
   corItem: {
-    color: "#6366f1"
+    color: "#6366f1",
+    size: 40
   }
 });
