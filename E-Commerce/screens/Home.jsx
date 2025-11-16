@@ -1,319 +1,250 @@
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
-import Menu from '../components/Menu';
+import React, { useState, useEffect, memo } from 'react';
+import { 
+  View, Text, StyleSheet, FlatList, Image, 
+  TouchableOpacity, TextInput, ActivityIndicator,
+  Keyboard
+} from 'react-native';
+import axios from 'axios';
+import Menu from '../components/Menu'; // Assumindo que você moveu para components
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
 
-const usuario = "UserTeste"
+const usuario = "UserTeste";
 
-const produtos = [
-  { id: '1', nome: 'Monitor Gay', preco: 799.90, imagem: 'https://via.placeholder.com/150', categoria: 'Eletrônicos' },
-  { id: '2', nome: 'Monitor meio gay', preco: 1299.90, imagem: 'https://via.placeholder.com/150', categoria: 'Eletrônicos' },
-  { id: '3', nome: 'Monitor muito gay', preco: 459.90, imagem: 'https://via.placeholder.com/150', categoria: 'Eletrônicos' },
-  { id: '4', nome: 'Monitor gay pra karalho', preco: 1599.90, imagem: 'https://via.placeholder.com/150', categoria: 'Eletrônicos' },
-  { id: '5', nome: 'Monitfereor 4ewfK', preco: 1899.90, imagem: 'https://via.placeholder.com/150', categoria: 'Eletrônicos' },
-  { id: '6', nome: 'Monitor Portfrefátil', preco: 699.90, imagem: 'https://via.placeholder.com/150', categoria: 'Eletrônicos' },
-  { id: '7', nome: 'Monitor Ofrefeffice', preco: 599.90, imagem: 'https://via.placeholder.com/150', categoria: 'Eletrônicos' },
-  { id: '8', nome: 'Monitor Gferfreaming Pro', preco: 2299.90, imagem: 'https://via.placeholder.com/150', categoria: 'Eletrônicos' },
-];
+const Topo = memo(({ usuario, query, filterProducts, styles, navigation }) => (
+  <View style={styles.topo}>
+    <View style={styles.headerRow}>
+      <TouchableOpacity onPress={() => navigation.navigate('DescriptionUser')}>
+        <Ionicons name="person" style={styles.user} />
+      </TouchableOpacity>
+      
+      <Text style={styles.titulo}>Seja bem vindo {usuario} </Text>
 
-export default function Home() {
+      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+        <MaterialIcons name="exit-to-app" style={styles.exit}/>
+      </TouchableOpacity>
+    </View>
+    <View style={styles.searchContainer}>
+      <Ionicons name="search" size={20} color="#9ca3af" style={styles.searchIcon} />
+      <TextInput
+        style={styles.searchInput}
+        placeholder="O que você está procurando?"
+        placeholderTextColor="#9ca3af"
+        value={query}
+        onChangeText={filterProducts}
+        autoFocus={false} 
+      />
+    </View>
+  </View>
+));
 
-  const navigation = useNavigation();
+export default function Home({ navigation }) { 
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [produtos, setProdutos] = useState([]); 
+  const [masterProdutos, setMasterProdutos] = useState([]);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get('https://fakestoreapi.com/products');
+        setProdutos(response.data);
+        setMasterProdutos(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar produtos:", error);
+        setProdutos([]);
+      }
+      setLoading(false);
+    };
+
+    fetchProducts();
+
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => setKeyboardVisible(true)
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => setKeyboardVisible(false)
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+      keyboardDidShowListener.remove();
+    };
+
+  }, []);
+
+  const filterProducts = (text) => {
+    setQuery(text);
+    if (text.trim() === '') {
+      setProdutos(masterProdutos);
+    } else {
+      const lowerQuery = text.toLowerCase();
+      const filteredData = masterProdutos.filter(item => 
+        item.title.toLowerCase().includes(lowerQuery)
+      );
+      setProdutos(filteredData);
+    }
+  };
 
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.produto}>
-      <View style={styles.imagemContainer}>
-        <Image source={{ uri: item.imagem }} style={styles.imagem} />
-        <View style={styles.categoriaTag}>
-          <Text style={styles.categoriaText}>{item.categoria}</Text>
-        </View>
-      </View>
+      <Image source={{ uri: item.image }} style={styles.imagem} /> 
       <View style={styles.info}>
-        <Text style={styles.nome}>{item.nome}</Text>
-        <Text style={styles.preco}>R$ {item.preco.toFixed(2)}</Text>
-        <View style={styles.avaliacao}>
-          <Ionicons name="star" size={16} color="#FFD700" />
-          <Ionicons name="star" size={16} color="#FFD700" />
-          <Ionicons name="star" size={16} color="#FFD700" />
-          <Ionicons name="star" size={16} color="#FFD700" />
-          <Ionicons name="star-half" size={16} color="#FFD700" />
-          <Text style={styles.avaliacaoText}>(128)</Text>
-        </View>
-        <TouchableOpacity style={styles.botaoComprar}>
-          <Text style={styles.botaoComprarText}>Adicionar ao Carrinho</Text>
-          <Ionicons name="cart" size={16} color="#fff" />
-        </TouchableOpacity>
+        <Text style={styles.nome} numberOfLines={2}>{item.title}</Text> 
+        <Text style={styles.preco}>R$ {item.price.toFixed(2)}</Text> 
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.containerGeral}>
-      <LinearGradient
-        colors={['#0f0f0f', '#1a1a1a']}
-        style={styles.topo}
-      >
-        <View style={styles.alinhamento}>
-          <View style={styles.userContainer}>
-            <Ionicons name="person-circle" style={styles.user} />
-            <View style={styles.userInfo}>
-              <Text style={styles.ola}>Olá,</Text>
-              <Text style={styles.usuarioNome}>{usuario}</Text>
-            </View>
-          </View>
-          
-          <View style={styles.tituloContainer}>
-            <Text style={styles.titulo}>Hardware</Text>
-            <Text style={styles.subtitulo}>Encontre os melhores produtos</Text>
-          </View>
+    <>
+      <Topo 
+        usuario={usuario}
+        query={query}
+        filterProducts={filterProducts}
+        styles={styles}
+        navigation={navigation}
+      />
 
-          <TouchableOpacity style={styles.exitButton}
-            onPress = {() => navigation.navigate("Login")}
-          >
-            <MaterialIcons name="exit-to-app" style={styles.exit}/>
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
-
-      <View style={styles.conteudo}>
-        <LinearGradient
-          colors={['#1a1a1a', '#121212']}
-          style={styles.container}
-        >
-          {/* Se quiser adicionar o statsContainer novamente, descomente abaixo */}
-          {/* <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>8</Text>
-              <Text style={styles.statLabel}>Produtos</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>4.8</Text>
-              <Text style={styles.statLabel}>Avaliação</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>12h</Text>
-              <Text style={styles.statLabel}>Entrega</Text>
-            </View>
-          </View> */}
-
+      <View style={styles.container}>
+        {loading ? (
+          <ActivityIndicator size="large" color="#6366f1" style={styles.loader} />
+        ) : (
           <FlatList
             data={produtos}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.id.toString()}
             renderItem={renderItem}
             contentContainerStyle={styles.lista}
             showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.listaVazia}>
+                <Text style={styles.listaVaziaTexto}>Nenhum produto encontrado.</Text>
+              </View>
+            }
           />
-        </LinearGradient>
+        )}
+        
+        {!isKeyboardVisible && <Menu navigation={navigation} />} 
       </View>
-      
-      <Menu />
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  containerGeral: {
-    flex: 1,
+   topo: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#121212',
-  },
-  topo: {
-    height: 120,
-    width: '100%',
-    justifyContent: 'center',
+    zIndex: 10,
+    paddingTop: 30,
+    paddingBottom: 10,
+    paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#6366f1',
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
+    borderBottomColor: '#333',
+    height: 140,
   },
-  conteudo: {
-    flex: 1,
-    marginTop: 0,
-  },
-  container: {
-    flex: 1,
-    width: '100%',
-  },
-  alinhamento: {
+  headerRow: {
     flexDirection: 'row',     
     alignItems: 'center',          
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 40,
     width: '100%',
-  },
-  userContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  userInfo: {
-    marginLeft: 10,
-  },
-  ola: {
-    color: '#94a3b8',
-    fontSize: 12,
-  },
-  usuarioNome: {
-    color: '#f1f5f9',
-    fontSize: 16,
-    fontWeight: 'bold',
+    marginBottom: 10,
   },
   user: {
     color: "#6366f1",
     fontSize: 40,
   },
-  tituloContainer: {
-    flex: 1,
-    alignItems: 'center',
-  },
   titulo: {
-    color: '#f1f5f9',
-    fontSize: 24,
-    fontWeight: 'bold',
+    color: '#6366f1',
+    fontSize: 16,
     textAlign: 'center',
-  },
-  subtitulo: {
-    color: '#94a3b8',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  exitButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    flex: 1,
   },
   exit: {
     color: "#6366f1",
-    fontSize: 28,
+    fontSize: 40,
   },
-  statsContainer: {
+  searchContainer: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(30, 30, 30, 0.8)',
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  statItem: {
-    flex: 1,
     alignItems: 'center',
+    backgroundColor: '#2d2d2d',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#374151',
+    height: 45,
   },
-  statNumber: {
-    color: '#6366f1',
-    fontSize: 20,
-    fontWeight: 'bold',
+  searchIcon: {
+    paddingLeft: 15,
   },
-  statLabel: {
-    color: '#94a3b8',
-    fontSize: 12,
-    marginTop: 4,
+  searchInput: {
+    flex: 1,
+    height: 45,
+    color: '#fff',
+    fontSize: 16,
+    paddingHorizontal: 10,
   },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#334155',
-    marginHorizontal: 10,
+  container: {
+    flex: 1, // <<<--- AQUI ESTÁ A CORREÇÃO
+    backgroundColor: '#121212',
   },
   lista: {
-    paddingTop: 20,
+    paddingTop: 150,
     paddingBottom: 100,
   },
   produto: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(30, 30, 30, 0.8)',
+    backgroundColor: '#1e1e1e',
     width: '90%',
     marginLeft: '5%',
-    marginBottom: 16,
-    borderRadius: 16,
+    marginBottom: 15,
+    borderRadius: 10,
     alignItems: 'center',
-    padding: 16,
-    height: 140,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-    borderLeftWidth: 4,
-    borderLeftColor: '#6366f1',
-  },
-  imagemContainer: {
-    position: 'relative',
+    padding: 10,
+    height: 120,
+    borderWidth: 1,
+    borderColor: 'white',
   },
   imagem: {
     width: 100,
     height: 100,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(99, 102, 241, 0.3)',
-  },
-  categoriaTag: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: '#6366f1',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-  },
-  categoriaText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
+    borderRadius: 8,
+    resizeMode: 'contain',
   },
   info: {
-    marginLeft: 16,
+    marginLeft: 15,
     flex: 1,
     justifyContent: 'center',
   },
   nome: {
     fontSize: 16,
-    color: '#f1f5f9',
+    color: '#fff',
     fontWeight: 'bold',
-    marginBottom: 4,
   },
   preco: {
-    fontSize: 18,
-    color: '#6366f1',
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
-  avaliacao: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  avaliacaoText: {
-    color: '#94a3b8',
-    fontSize: 12,
-    marginLeft: 6,
-  },
-  botaoComprar: {
-    flexDirection: 'row',
-    backgroundColor: '#6366f1',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'flex-start',
-  },
-  botaoComprarText: {
+    marginTop: 5,
+    fontSize: 16,
     color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginRight: 6,
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 150, 
+    paddingBottom: 100,
+    backgroundColor: '#121212',
+  },
+  listaVazia: {
+    alignItems: 'center',
+    marginTop: 50,
+  },
+  listaVaziaTexto: {
+    color: '#9ca3af',
+    fontSize: 16,
   },
 });

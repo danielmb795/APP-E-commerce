@@ -1,26 +1,36 @@
+import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
 
-export default function Menu() {
-
-  const navigation = useNavigation()
-
+export default function Menu({ navigation }) {
   return (
     <View style={styles.menu}>
-      <TouchableOpacity style={styles.item}>
-        <Ionicons name="home" size={35}  style ={styles.corItem} />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.item}>
-        <Ionicons name="search" size={35} style ={styles.corItem} />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.item}>
-        <Ionicons name="cart" size={35} style ={styles.corItem} />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.item}
-        onPress ={() => navigation.navigate("Description")}
+      <TouchableOpacity 
+        style={styles.item}
+        onPress={() => navigation.navigate('Home')}
       >
-        <Ionicons name="person" size={35}  style ={styles.corItem} />
+        <Ionicons name="home" size={24} color="white" style ={styles.corItem} />
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.item}
+        onPress={() => navigation.navigate('Cart')}
+      >
+        <Ionicons name="cart" size={24} color="white" style ={styles.corItem} />
+      </TouchableOpacity>
+      
+      <TouchableOpacity 
+        style={styles.item}
+        onPress={() => navigation.navigate('DescriptionUser')}
+      >
+        <Ionicons name="person" size={24} color="white" style ={styles.corItem} />
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.item}
+        onPress={() => navigation.navigate('Settings')}
+      >
+        <Ionicons name="settings" size={24} color="white" style ={styles.corItem} />
       </TouchableOpacity>
     </View>
   );
@@ -37,10 +47,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     justifyContent: 'space-around', 
     alignItems: 'center',
-    // borderTopLeftRadius: 15,
-    // borderTopRightRadius: 15,
     borderRadius: 40,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: 'white',
     elevation: 10, 
     shadowColor: '#000', 
@@ -50,12 +58,12 @@ const styles = StyleSheet.create({
     top: '88%'
   },
   item: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    color: "#6366f1",
+    color: "#6366f1"
   },
   corItem: {
-    color: "#6366f1",
-    size: 40
+    color: "#6366f1"
   }
 });
