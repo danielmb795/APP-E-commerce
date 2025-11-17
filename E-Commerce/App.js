@@ -6,8 +6,9 @@ import Home from './screens/Home';
 import Login from './screens/Login';
 import RegisterUser from './screens/RegisterUser';
 import CartScreen from './screens/CartScreen';
-import SettingsScreen from './screens/Settings.jsx';
+import SettingsScreen from './screens/Saller.jsx';
 import DescriptionUserScreen from './screens/DescriptionUser.jsx';
+import ProductDetail from './screens/ProductDetail.jsx';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -28,7 +29,8 @@ export default function App() {
         <Stack.Screen name="RegisterUser" component={RegisterUser} />
         <Stack.Screen name="Cart" component={CartScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="DescriptionUser" component={DescriptionUserScreen} /> 
+        <Stack.Screen name="DescriptionUser" component={DescriptionUserScreen} />
+        <Stack.Screen name="ProductDetail" component={ProductDetail} />
       </Stack.Navigator>
     </NavigationContainer>
   );

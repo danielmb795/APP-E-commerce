@@ -26,11 +26,13 @@ export default function Menu({ navigation }) {
         <Ionicons name="person" size={24} color="white" style ={styles.corItem} />
       </TouchableOpacity>
 
+
+  
       <TouchableOpacity 
         style={styles.item}
         onPress={() => navigation.navigate('Settings')}
-      >
-        <Ionicons name="settings" size={24} color="white" style ={styles.corItem} />
+      >                 
+        <Ionicons name="storefront" size={24} color="white" style ={styles.corItem} />
       </TouchableOpacity>
     </View>
   );

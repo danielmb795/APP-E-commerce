@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Menu from '../components/Menu'; // <<<--- IMPORTAÇÃO CORRETA
+import Menu from '../components/Menu';
 
 export default function Settings({ navigation }) {
   return (
     <>
       <View style={styles.container}>
-        <Text style={styles.text}>Tela de Configurações</Text>
+        <Text style={styles.text}>tela de venda</Text>
       </View>
       <Menu navigation={navigation} />
     </>

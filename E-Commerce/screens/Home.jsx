@@ -2,10 +2,10 @@ import React, { useState, useEffect, memo } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, Image, 
   TouchableOpacity, TextInput, ActivityIndicator,
-  Keyboard
+  Keyboard, Alert
 } from 'react-native';
 import axios from 'axios';
-import Menu from '../components/Menu'; // Assumindo que você moveu para components
+import Menu from '../components/Menu';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
@@ -14,26 +14,21 @@ const usuario = "UserTeste";
 const Topo = memo(({ usuario, query, filterProducts, styles, navigation }) => (
   <View style={styles.topo}>
     <View style={styles.headerRow}>
-      <TouchableOpacity onPress={() => navigation.navigate('DescriptionUser')}>
-        <Ionicons name="person" style={styles.user} />
-      </TouchableOpacity>
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#9ca3af" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="O que você está procurando?"
+          placeholderTextColor="#9ca3af"
+          value={query}
+          onChangeText={filterProducts}
+          autoFocus={false} 
+        />
+      </View>
       
-      <Text style={styles.titulo}>Seja bem vindo {usuario} </Text>
-
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
         <MaterialIcons name="exit-to-app" style={styles.exit}/>
       </TouchableOpacity>
-    </View>
-    <View style={styles.searchContainer}>
-      <Ionicons name="search" size={20} color="#9ca3af" style={styles.searchIcon} />
-      <TextInput
-        style={styles.searchInput}
-        placeholder="O que você está procurando?"
-        placeholderTextColor="#9ca3af"
-        value={query}
-        onChangeText={filterProducts}
-        autoFocus={false} 
-      />
     </View>
   </View>
 ));
@@ -90,14 +85,55 @@ export default function Home({ navigation }) {
     }
   };
 
+  const adicionarAoCarrinho = (produto) => {
+    Alert.alert(
+      "Produto adicionado!",
+      `${produto.title} foi adicionado ao carrinho.`,
+      [{ text: "OK" }]
+    );
+    console.log("Produto adicionado ao carrinho:", produto);
+  };
+
+  const comprarAgora = (produto) => {
+    Alert.alert(
+      "Compra rápida!",
+      `Você está comprando: ${produto.title}`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Confirmar", onPress: () => console.log("Compra confirmada:", produto) }
+      ]
+    );
+  };
+
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.produto}>
-      <Image source={{ uri: item.image }} style={styles.imagem} /> 
-      <View style={styles.info}>
-        <Text style={styles.nome} numberOfLines={2}>{item.title}</Text> 
-        <Text style={styles.preco}>R$ {item.price.toFixed(2)}</Text> 
-      </View>
-    </TouchableOpacity>
+    <View style={styles.produtoContainer}>
+      <TouchableOpacity 
+        style={styles.produto}
+        onPress={() => navigation.navigate('ProductDetail', { product: item })}
+      >
+        <Image source={{ uri: item.image }} style={styles.imagem} /> 
+        <View style={styles.info}>
+          <Text style={styles.nome} numberOfLines={2}>{item.title}</Text> 
+          <Text style={styles.preco}>R$ {item.price.toFixed(2)}</Text> 
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.botaoCarrinho}
+        onPress={() => adicionarAoCarrinho(item)}
+      >
+        <Ionicons name="cart" size={20} color="#fff" />
+        <Text style={styles.textoBotaoCarrinho}>Adicionar ao Carrinho</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.botaoComprar}
+        onPress={() => comprarAgora(item)}
+      >
+        <Ionicons name="flash" size={20} color="#fff" />
+        <Text style={styles.textoBotaoComprar}>Comprar Agora</Text>
+      </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -135,7 +171,7 @@ export default function Home({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-   topo: {
+  topo: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -147,14 +183,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
-    height: 140,
+    height: 100, 
   },
   headerRow: {
     flexDirection: 'row',     
     alignItems: 'center',          
     justifyContent: 'space-between',
     width: '100%',
-    marginBottom: 10,
   },
   user: {
     color: "#6366f1",
@@ -178,6 +213,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#374151',
     height: 45,
+    flex: 1, 
+    marginRight: 15, 
   },
   searchIcon: {
     paddingLeft: 15,
@@ -190,25 +227,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   container: {
-    flex: 1, // <<<--- AQUI ESTÁ A CORREÇÃO
+    flex: 1,
     backgroundColor: '#121212',
   },
   lista: {
-    paddingTop: 150,
+    paddingTop: 110, 
     paddingBottom: 100,
+  },
+  produtoContainer: {
+    width: '90%',
+    marginLeft: '5%',
+    marginBottom: 15,
   },
   produto: {
     flexDirection: 'row',
     backgroundColor: '#1e1e1e',
-    width: '90%',
-    marginLeft: '5%',
-    marginBottom: 15,
     borderRadius: 10,
     alignItems: 'center',
     padding: 10,
     height: 120,
     borderWidth: 1,
-    borderColor: 'white',
+    borderColor: '#333',
+    // Sombreamento
+    shadowColor: "#6366f1",
+    shadowOffset: {
+      width: 4,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   imagem: {
     width: 100,
@@ -231,12 +279,59 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
   },
+  botaoCarrinho: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6366f1',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginTop: 8,
+    shadowColor: "#6366f1",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  textoBotaoCarrinho: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  botaoComprar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#10b981',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginTop: 8,
+    shadowColor: "#10b981",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  textoBotaoComprar: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
   loader: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 150, 
-    paddingBottom: 100,
+    paddingTop: 110,
     backgroundColor: '#121212',
   },
   listaVazia: {
