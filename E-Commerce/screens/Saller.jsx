@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Image } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import Menu from '../components/Menu';
-
 
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
@@ -19,6 +18,7 @@ export default function Saller({ navigation }) {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   
+
   const [newProduct, setNewProduct] = useState({
     name: '',
     category: '',
@@ -30,7 +30,7 @@ export default function Saller({ navigation }) {
 
   const categories = ['Processador', 'Placa de Vídeo', 'Memória RAM', 'SSD', 'Placa-Mãe', 'Fonte', 'Gabinete', 'Cooler', 'Monitor'];
 
-  // Calcular estatísticas
+
   useEffect(() => {
     const totalProducts = products.length;
     const lowStock = products.filter(p => p.stock < 5).length;

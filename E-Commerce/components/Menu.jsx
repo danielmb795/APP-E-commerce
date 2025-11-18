@@ -30,7 +30,7 @@ export default function Menu({ navigation }) {
   
       <TouchableOpacity 
         style={styles.item}
-        onPress={() => navigation.navigate('Settings')}
+        onPress={() => navigation.navigate('Saller')}
       >                 
         <Ionicons name="storefront" size={24} color="white" style ={styles.corItem} />
       </TouchableOpacity>
