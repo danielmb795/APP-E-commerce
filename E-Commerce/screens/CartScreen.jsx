@@ -1,15 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-
-const produtosNoCarrinho = [
-  { id: '1', title: 'Monitor Gamer', price: 79.90, image: 'https://fakestoreapi.com/img/81QpkIctqPL._AC_SX679_.jpg', quantity: 1 },
-  { id: '2', title: 'Teclado Mecânico', price: 299.90, image: 'https://fakestoreapi.com/img/71-3HjGNDUL._AC_SY879._SX._UX._SY._UY_.jpg', quantity: 2 },
-];
-
-const total = produtosNoCarrinho.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+import { useCart } from '../contexts/CartContext'; // Usar Contexto
 
 export default function CartScreen({ navigation }) {
+  const { carrinho, removerDoCarrinho } = useCart();
+
+  const total = carrinho.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
   const renderItem = ({ item }) => (
     <View style={styles.produtoItem}>
@@ -18,16 +15,15 @@ export default function CartScreen({ navigation }) {
         <Text style={styles.nome} numberOfLines={1}>{item.title}</Text>
         <Text style={styles.preco}>R$ {item.price.toFixed(2)}</Text>
         <View style={styles.quantidadeContainer}>
-          <TouchableOpacity style={styles.botaoQuantidade}>
-            <Ionicons name="remove-circle" size={24} color="#6366f1" />
-          </TouchableOpacity>
+          <Text style={styles.quantidadeLabel}>Qtd:</Text>
           <Text style={styles.quantidadeTexto}>{item.quantity}</Text>
-          <TouchableOpacity style={styles.botaoQuantidade}>
-            <Ionicons name="add-circle" size={24} color="#6366f1" />
-          </TouchableOpacity>
         </View>
       </View>
-      <TouchableOpacity style={styles.botaoLixeira}>
+
+      <TouchableOpacity 
+        style={styles.botaoLixeira} 
+        onPress={() => removerDoCarrinho(item.id)}
+      >
         <Ionicons name="trash-outline" size={24} color="#db4437" />
       </TouchableOpacity>
     </View>
@@ -55,24 +51,30 @@ export default function CartScreen({ navigation }) {
 
       <View style={styles.container}>
         <FlatList
-          data={produtosNoCarrinho}
-          keyExtractor={(item) => item.id}
+          data={carrinho}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={renderItem}
           contentContainerStyle={styles.lista}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.carrinhoVazio}>
+              <Ionicons name="cart-outline" size={50} color="#333" />
               <Text style={styles.carrinhoVazioTexto}>Seu carrinho está vazio.</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+                 <Text style={{color: '#6366f1', marginTop: 10}}>Ir às compras</Text>
+              </TouchableOpacity>
             </View>
           }
         />
 
-        <View style={styles.resumoContainer}>
-          <Text style={styles.resumoTexto}>Total: R$ {total.toFixed(2)}</Text>
-          <TouchableOpacity style={styles.botaoCheckout}>
-            <Text style={styles.botaoTexto}>Finalizar Compra</Text>
-          </TouchableOpacity>
-        </View>
+        {carrinho.length > 0 && (
+          <View style={styles.resumoContainer}>
+            <Text style={styles.resumoTexto}>Total: R$ {total.toFixed(2)}</Text>
+            <TouchableOpacity style={styles.botaoCheckout}>
+              <Text style={styles.botaoTexto}>Finalizar Compra</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </>
   );
@@ -117,7 +119,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   container: {
-    flex: 1, // <<<--- AQUI ESTÁ A CORREÇÃO
+    flex: 1,
     backgroundColor: '#121212',
   },
   lista: {
@@ -127,27 +129,29 @@ const styles = StyleSheet.create({
   produtoItem: {
     flexDirection: 'row',
     backgroundColor: '#1e1e1e',
-    width: '90%',
-    marginLeft: '5%',
+    width: '92%',
+    marginLeft: '4%',
     marginBottom: 15,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
     padding: 15,
-    height: 130,
+    height: 120,
     borderWidth: 1,
     borderColor: '#333',
   },
   imagem: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     borderRadius: 8,
     resizeMode: 'contain',
+    backgroundColor: '#fff',
   },
   info: {
     marginLeft: 15,
     flex: 1,
     justifyContent: 'space-between',
     height: '100%',
+    paddingVertical: 5,
   },
   nome: {
     fontSize: 16,
@@ -157,31 +161,35 @@ const styles = StyleSheet.create({
   preco: {
     marginTop: 5,
     fontSize: 16,
-    color: '#fff',
+    color: '#6366f1',
+    fontWeight: 'bold',
   },
   quantidadeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 5,
   },
-  botaoQuantidade: {
-    padding: 5,
+  quantidadeLabel: {
+    color: '#9ca3af',
+    fontSize: 14,
+    marginRight: 5,
   },
   quantidadeTexto: {
     color: '#fff',
-    fontSize: 16,
-    marginHorizontal: 10,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   botaoLixeira: {
     padding: 10,
   },
   carrinhoVazio: {
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: 100,
   },
   carrinhoVazioTexto: {
     color: '#9ca3af',
     fontSize: 16,
+    marginTop: 10,
   },
   resumoContainer: {
     position: 'absolute',
@@ -192,14 +200,14 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 30,
     borderTopWidth: 1,
-    borderColor: 'white',
+    borderColor: '#333',
     alignItems: 'center',
   },
   resumoTexto: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 15,
   },
   botaoCheckout: {
     backgroundColor: '#6366f1',
@@ -212,6 +220,6 @@ const styles = StyleSheet.create({
   botaoTexto: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
 });

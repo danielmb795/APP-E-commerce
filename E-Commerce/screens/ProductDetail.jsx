@@ -5,12 +5,15 @@ import {
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useCart } from '../contexts/CartContext'; // Importar contexto
 
 export default function ProductDetail() {
   const route = useRoute();
   const navigation = useNavigation();
   const { product } = route.params;
   const [loading, setLoading] = useState(false);
+  
+  const { adicionarAoCarrinho } = useCart(); // Usar função do contexto
 
   const handleBuy = () => {
     setLoading(true);
@@ -27,15 +30,19 @@ export default function ProductDetail() {
             style: 'cancel'
           },
           {
-            text: 'Ver meus pedidos',
-            onPress: () => console.log('Navegar para pedidos'),
+            text: 'Ver carrinho',
+            onPress: () => navigation.navigate('Cart'),
           }
         ]
       );
+      // Opcional: Adicionar ao carrinho antes de comprar
+      adicionarAoCarrinho(product);
     }, 1500);
   };
 
   const handleAddToCart = () => {
+    adicionarAoCarrinho(product); // Adiciona de verdade no contexto
+    
     Alert.alert(
       '🛒 Produto adicionado!',
       `${product.title} foi adicionado ao carrinho`,
@@ -46,7 +53,7 @@ export default function ProductDetail() {
         },
         {
           text: 'Ver carrinho',
-          onPress: () => console.log('Navegar para carrinho'),
+          onPress: () => navigation.navigate('Cart'),
         }
       ]
     );
@@ -177,6 +184,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#333',
     backgroundColor: '#121212',
+    marginTop: 30, // Ajuste para ficar abaixo da status bar
   },
   backButton: {
     padding: 8,

@@ -7,7 +7,7 @@ export default function Login({ navigation }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   
-  // 1. CORREÇÃO AQUI: Deve começar como 'false' (escondido)
+
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const handleLogin = () => {
@@ -61,7 +61,7 @@ export default function Login({ navigation }) {
               value={password}
               onChangeText={setPassword}
               autoCapitalize="none"
-              // 2. CORREÇÃO AQUI: 'secureTextEntry' é true quando a senha NÃO está visível
+
               secureTextEntry={!isPasswordVisible} 
             />
             
@@ -70,7 +70,7 @@ export default function Login({ navigation }) {
               onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             >
               <Ionicons 
-                // 3. CORREÇÃO AQUI: Mostra 'eye-outline' (ver) por padrão
+
                 name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
                 size={20} 
                 color="#6b7280" 

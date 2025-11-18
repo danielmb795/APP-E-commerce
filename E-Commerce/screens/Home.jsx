@@ -8,6 +8,7 @@ import axios from 'axios';
 import Menu from '../components/Menu';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useCart } from '../contexts/CartContext'; // 1. Importação do Contexto
 
 const usuario = "UserTeste";
 
@@ -39,6 +40,9 @@ export default function Home({ navigation }) {
   const [produtos, setProdutos] = useState([]); 
   const [masterProdutos, setMasterProdutos] = useState([]);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  // 2. Pega a função do contexto global
+  const { adicionarAoCarrinho: adicionarGlobal } = useCart();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -85,19 +89,20 @@ export default function Home({ navigation }) {
     }
   };
 
+  // 3. Atualizei sua função para usar o Contexto real
   const adicionarAoCarrinho = (produto) => {
+    adicionarGlobal(produto); // Salva no contexto
     Alert.alert(
       "Produto adicionado!",
-      `${produto.title} foi adicionado ao carrinho.`,
+      `${produto.title.slice(0, 20)}... foi adicionado ao carrinho.`,
       [{ text: "OK" }]
     );
-    console.log("Produto adicionado ao carrinho:", produto);
   };
 
   const comprarAgora = (produto) => {
     Alert.alert(
       "Compra rápida!",
-      `Você está comprando: ${produto.title}`,
+      `Você está comprando: ${produto.title.slice(0, 20)}...`,
       [
         { text: "Cancelar", style: "cancel" },
         { text: "Confirmar", onPress: () => console.log("Compra confirmada:", produto) }
