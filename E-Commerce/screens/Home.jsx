@@ -8,9 +8,11 @@ import axios from 'axios';
 import Menu from '../components/Menu';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useCart } from '../contexts/CartContext'; // 1. Importação do Contexto
+import { useCart } from '../contexts/CartContext'; 
 
 const usuario = "UserTeste";
+
+const baseUrl = "https://bare-marris-prof-ferretto-8544d847.koyeb.app"
 
 const Topo = memo(({ usuario, query, filterProducts, styles, navigation }) => (
   <View style={styles.topo}>
@@ -41,18 +43,34 @@ export default function Home({ navigation }) {
   const [masterProdutos, setMasterProdutos] = useState([]);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
-  // 2. Pega a função do contexto global
   const { adicionarAoCarrinho: adicionarGlobal } = useCart();
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('https://fakestoreapi.com/products');
-        setProdutos(response.data);
-        setMasterProdutos(response.data);
+        const response = await axios.get(`${baseUrl}/products/brl`);
+        
+        const productsData = response.data.content || [];
+        
+        const formattedProducts = productsData.map(product => ({
+          id: product.id,
+          title: `${product.brand} ${product.model}`,
+          description: product.description,
+          price: product.convertedPrice || product.price,
+          image: product.imageUrl,
+          brand: product.brand,
+          model: product.model,
+          currency: product.currency,
+          stock: product.stock,
+          originalData: product 
+        }));
+        
+        setProdutos(formattedProducts);
+        setMasterProdutos(formattedProducts);
       } catch (error) {
         console.error("Erro ao buscar produtos:", error);
+        Alert.alert("Erro", "Não foi possível carregar os produtos");
         setProdutos([]);
       }
       setLoading(false);
@@ -83,15 +101,16 @@ export default function Home({ navigation }) {
     } else {
       const lowerQuery = text.toLowerCase();
       const filteredData = masterProdutos.filter(item => 
-        item.title.toLowerCase().includes(lowerQuery)
+        item.title.toLowerCase().includes(lowerQuery) ||
+        item.brand?.toLowerCase().includes(lowerQuery) ||
+        item.model?.toLowerCase().includes(lowerQuery)
       );
       setProdutos(filteredData);
     }
   };
 
-  // 3. Atualizei sua função para usar o Contexto real
   const adicionarAoCarrinho = (produto) => {
-    adicionarGlobal(produto); // Salva no contexto
+    adicionarGlobal(produto);
     Alert.alert(
       "Produto adicionado!",
       `${produto.title.slice(0, 20)}... foi adicionado ao carrinho.`,
@@ -119,7 +138,7 @@ export default function Home({ navigation }) {
         <Image source={{ uri: item.image }} style={styles.imagem} /> 
         <View style={styles.info}>
           <Text style={styles.nome} numberOfLines={2}>{item.title}</Text> 
-          <Text style={styles.preco}>R$ {item.price.toFixed(2)}</Text> 
+          <Text style={styles.preco}>R$ {item.price?.toFixed(2)}</Text> 
         </View>
       </TouchableOpacity>
 
@@ -157,13 +176,15 @@ export default function Home({ navigation }) {
         ) : (
           <FlatList
             data={produtos}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
             renderItem={renderItem}
             contentContainerStyle={styles.lista}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.listaVazia}>
-                <Text style={styles.listaVaziaTexto}>Nenhum produto encontrado.</Text>
+                <Text style={styles.listaVaziaTexto}>
+                  {loading ? "Carregando..." : "Nenhum produto encontrado."}
+                </Text>
               </View>
             }
           />
@@ -174,7 +195,6 @@ export default function Home({ navigation }) {
     </>
   );
 }
-
 const styles = StyleSheet.create({
   topo: {
     position: 'absolute',

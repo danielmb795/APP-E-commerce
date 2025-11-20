@@ -16,7 +16,6 @@ export function CartProvider({ children }) {
             : item
         );
       }
-      // Garante que salvamos a imagem e preço corretamente
       return [...listaAtual, { ...produto, quantity: 1 }];
     });
   };
