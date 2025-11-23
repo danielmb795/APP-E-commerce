@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCart } from '../contexts/CartContext'; // Usar Contexto
+import { useCart } from '../contexts/CartContext';
 
 export default function CartScreen({ navigation }) {
   const { carrinho, removerDoCarrinho } = useCart();

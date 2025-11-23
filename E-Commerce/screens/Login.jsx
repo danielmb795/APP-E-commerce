@@ -1,21 +1,31 @@
 import React, { useState } from 'react';
-import {View, Text, StyleSheet, TextInput, TouchableOpacity,} from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext'; // Importar contexto
 
 export default function Login({ navigation }) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  
-
+  const [isLoading, setIsLoading] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  
+  const { signIn } = useAuth();
 
-  const handleLogin = () => {
-    if (username.trim() === '' || password.trim() === '') {
-      setError('Por favor, preencha todos os campos.');
-    } else {
-      setError('');
+  const handleLogin = async () => {
+    if (email.trim() === '' || password.trim() === '') {
+      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await signIn(email, password);
       navigation.navigate('Home');
+    } catch (error) {
+      console.log(error);
+      Alert.alert('Erro no Login', 'Usuário ou senha inválidos.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -38,10 +48,10 @@ export default function Login({ navigation }) {
             />
             <TextInput
               style={styles.input}
-              placeholder="Username ou Email"
+              placeholder="Email"
               placeholderTextColor="#9ca3af"
-              value={username}
-              onChangeText={setUsername}
+              value={email}
+              onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address" 
             />
@@ -56,12 +66,11 @@ export default function Login({ navigation }) {
             />
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder="Senha"
               placeholderTextColor="#9ca3af"
               value={password}
               onChangeText={setPassword}
               autoCapitalize="none"
-
               secureTextEntry={!isPasswordVisible} 
             />
             
@@ -70,7 +79,6 @@ export default function Login({ navigation }) {
               onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             >
               <Ionicons 
-
                 name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
                 size={20} 
                 color="#6b7280" 
@@ -78,13 +86,16 @@ export default function Login({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
           <TouchableOpacity 
             style={styles.botao}
             onPress={handleLogin}
+            disabled={isLoading}
           >
-            <Text style={styles.textoBotao}>Entrar</Text>
+            {isLoading ? (
+                <ActivityIndicator color="#fff" />
+            ) : (
+                <Text style={styles.textoBotao}>Entrar</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.divider}>
@@ -183,12 +194,6 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     padding: 15,
-  },
-  errorText: {
-    color: '#ef4444',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 10,
   },
   botao: {
     backgroundColor: '#6366f1',

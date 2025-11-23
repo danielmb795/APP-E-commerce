@@ -1,31 +1,42 @@
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 
-import Menu from '../components/Menu'
-
-export default function Description() {
-
+export default function DescriptionUser() {
   const navigation = useNavigation();
+  const { user, signOut } = useAuth();
+  const { carrinho } = useCart();
 
-  const userData = {
-    nome: 'UserTeste',
-    email: 'userteste@email.com',
-    telefone: '(11) 99999-9999',
-    endereco: 'Rua Exemplo, 123 - São Paulo, SP',
-    dataCadastro: '15/03/2024',
+  const handleLogout = () => {
+    signOut();
+    navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+    });
+  }
+
+  if (!user) {
+      return (
+        <View style={styles.container}>
+            <Text style={{color:'white', textAlign:'center', marginTop: 50}}>Faça login para ver seu perfil.</Text>
+        </View>
+      );
+  }
+
+  const displayData = {
+    nome: user.name || 'Usuário',
+    email: user.email || 'Email não disponível',
+    // A API não armazena estes dados, então mostramos uma mensagem padrão
+    telefone: user.phone || 'Não cadastrado na API', 
+    endereco: user.address || 'Não cadastrado na API',
     avatar: 'https://via.placeholder.com/150',
-    carrinho: 3,
   };
 
-  const stats = [
-    { icon: 'cart-outline', label: 'Itens no Carrinho', value: userData.carrinho, color: '#6366f1' },
-  ];
-
   return (
-    <>
     <View style={styles.container}>
       <LinearGradient
         colors={['#0f0f0f', '#1a1a1a']}
@@ -39,8 +50,8 @@ export default function Description() {
             <Ionicons name="arrow-back" size={24} color="#6366f1" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Meu Perfil</Text>
-          <TouchableOpacity style={styles.editButton}>
-            <Ionicons name="pencil-outline" size={20} color="#6366f1" />
+          <TouchableOpacity style={styles.editButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={20} color="#ef4444" />
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -55,7 +66,7 @@ export default function Description() {
         >
           <View style={styles.avatarContainer}>
             <Image 
-              source={{ uri: userData.avatar }} 
+              source={{ uri: displayData.avatar }} 
               style={styles.avatar}
             />
             <View style={styles.avatarBadge}>
@@ -63,21 +74,19 @@ export default function Description() {
             </View>
           </View>
           
-          <Text style={styles.userName}>{userData.nome}</Text>
-          <Text style={styles.userEmail}>{userData.email}</Text>
+          <Text style={styles.userName}>{displayData.nome}</Text>
+          <Text style={styles.userEmail}>{displayData.email}</Text>
           
         </LinearGradient>
 
         <View style={styles.statsContainer}>
-          {stats.map((stat, index) => (
-            <View key={index} style={styles.statItem}>
-              <View style={[styles.statIcon, { backgroundColor: `${stat.color}20` }]}>
-                <Ionicons name={stat.icon} size={24} color={stat.color} />
+            <View style={styles.statItem}>
+              <View style={[styles.statIcon, { backgroundColor: `#6366f120` }]}>
+                <Ionicons name="cart-outline" size={24} color="#6366f1" />
               </View>
-              <Text style={styles.statValue}>{stat.value}</Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
+              <Text style={styles.statValue}>{carrinho.length}</Text>
+              <Text style={styles.statLabel}>Itens no Carrinho</Text>
             </View>
-          ))}
         </View>
 
         <View style={styles.section}>
@@ -87,7 +96,7 @@ export default function Description() {
               <Ionicons name="person-outline" size={20} color="#6366f1" />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Nome completo</Text>
-                <Text style={styles.infoValue}>{userData.nome}</Text>
+                <Text style={styles.infoValue}>{displayData.nome}</Text>
               </View>
             </View>
 
@@ -95,7 +104,7 @@ export default function Description() {
               <Ionicons name="mail-outline" size={20} color="#6366f1" />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>E-mail</Text>
-                <Text style={styles.infoValue}>{userData.email}</Text>
+                <Text style={styles.infoValue}>{displayData.email}</Text>
               </View>
             </View>
 
@@ -103,7 +112,7 @@ export default function Description() {
               <Ionicons name="call-outline" size={20} color="#6366f1" />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Telefone</Text>
-                <Text style={styles.infoValue}>{userData.telefone}</Text>
+                <Text style={styles.infoValue}>{displayData.telefone}</Text>
               </View>
             </View>
 
@@ -111,20 +120,13 @@ export default function Description() {
               <Ionicons name="location-outline" size={20} color="#6366f1" />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Endereço</Text>
-                <Text style={styles.infoValue}>{userData.endereco}</Text>
-              </View>
-            </View>
-
-            <View style={styles.infoItem}>
-              <Ionicons name="calendar-outline" size={20} color="#6366f1" />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Membro desde</Text>
-                <Text style={styles.infoValue}>{userData.dataCadastro}</Text>
+                <Text style={styles.infoValue}>{displayData.endereco}</Text>
               </View>
             </View>
           </View>
         </View>
 
+        
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sobre o Aplicativo</Text>
           <View style={styles.aboutCard}>
@@ -135,7 +137,7 @@ export default function Description() {
             
             <Text style={styles.aboutDescription}>
               Bem-vindo à HardwareStore, este é um projeto acadêmico desenvolvido
-              por estudandes de Ciência da computação da Atitus Educação.
+              por estudantes de Ciência da computação da Atitus Educação.
             </Text>
 
             <View style={styles.aboutFeatures}>
@@ -146,14 +148,6 @@ export default function Description() {
               <View style={styles.featureItem}>
                 <Ionicons name="rocket" size={16} color="#6366f1" />
                 <Text style={styles.featureText}>Entrega expressa</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Ionicons name="headset" size={16} color="#f59e0b" />
-                <Text style={styles.featureText}>Suporte 24/7</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Ionicons name="card" size={16} color="#ef4444" />
-                <Text style={styles.featureText}>Pagamento facilitado</Text>
               </View>
             </View>
 
@@ -167,7 +161,6 @@ export default function Description() {
         <View style={styles.footer} />
       </ScrollView>
     </View>
-    </>
   );
 }
 
