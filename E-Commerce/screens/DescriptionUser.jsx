@@ -1,14 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext'; 
 import { useCart } from '../contexts/CartContext';
+import * as ImagePicker from 'expo-image-picker'; 
 
 export default function DescriptionUser() {
   const navigation = useNavigation();
-  const { user, signOut } = useAuth();
+  
+  const { user, signOut, updateUserProfile } = useAuth(); 
   const { carrinho } = useCart();
 
   const handleLogout = () => {
@@ -18,6 +20,28 @@ export default function DescriptionUser() {
         routes: [{ name: 'Login' }],
     });
   }
+
+  const handlePickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      Alert.alert("Permissão necessária", "É necessário permitir o acesso à galeria para mudar a foto.");
+      return;
+    }
+
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1], 
+      quality: 0.5, 
+    });
+
+    if (!result.canceled) {
+      const novaImagemUri = result.assets[0].uri;
+      updateUserProfile({ avatar: novaImagemUri });
+    }
+  };
 
   if (!user) {
       return (
@@ -30,10 +54,9 @@ export default function DescriptionUser() {
   const displayData = {
     nome: user.name || 'Usuário',
     email: user.email || 'Email não disponível',
-    // A API não armazena estes dados, então mostramos uma mensagem padrão
-    telefone: user.phone || 'Não cadastrado na API', 
-    endereco: user.address || 'Não cadastrado na API',
-    avatar: 'https://via.placeholder.com/150',
+    telefone: user.phone || 'Não cadastrado', 
+    endereco: user.address || 'Não cadastrado',
+    avatar: user.avatar || 'https://via.placeholder.com/150', 
   };
 
   return (
@@ -69,9 +92,9 @@ export default function DescriptionUser() {
               source={{ uri: displayData.avatar }} 
               style={styles.avatar}
             />
-            <View style={styles.avatarBadge}>
+            <TouchableOpacity style={styles.avatarBadge} onPress={handlePickImage}>
               <Ionicons name="camera" size={16} color="#fff" />
-            </View>
+            </TouchableOpacity>
           </View>
           
           <Text style={styles.userName}>{displayData.nome}</Text>
@@ -126,7 +149,6 @@ export default function DescriptionUser() {
           </View>
         </View>
 
-        
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sobre o Aplicativo</Text>
           <View style={styles.aboutCard}>
@@ -227,6 +249,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#6366f1',
   },
+
   avatarBadge: {
     position: 'absolute',
     bottom: 5,
@@ -239,6 +262,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#1e1e1e',
+    zIndex: 1,
   },
   userName: {
     color: '#f1f5f9',

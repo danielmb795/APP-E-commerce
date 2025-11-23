@@ -24,12 +24,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function signIn(email, password) {
-
     const response = await api.post('/auth/signin', {
       email,
       password,
     });
-
 
     const { token, user } = response.data;
 
@@ -46,8 +44,20 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
+
+  async function updateUserProfile(updates) {
+    try {
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      await AsyncStorage.setItem('@Auth:user', JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error("Erro ao atualizar perfil:", error);
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ signed: !!user, user, signIn, signOut, loading }}>
+
+    <AuthContext.Provider value={{ signed: !!user, user, signIn, signOut, updateUserProfile, loading }}>
       {children}
     </AuthContext.Provider>
   );
