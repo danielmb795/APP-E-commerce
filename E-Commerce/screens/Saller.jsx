@@ -705,6 +705,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#121212',
+    marginTop: 18
   },
   tabContent: {
     flex: 1,
