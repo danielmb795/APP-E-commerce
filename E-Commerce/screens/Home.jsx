@@ -12,7 +12,7 @@ import { useCart } from '../contexts/CartContext';
 
 const usuario = "UserTeste";
 
-const baseUrl = "https://bare-marris-prof-ferretto-8544d847.koyeb.app"
+const baseUrl = "http://10.0.2.2:8765"
 
 const Topo = memo(({ usuario, query, filterProducts, styles, navigation }) => (
   <View style={styles.topo}>
