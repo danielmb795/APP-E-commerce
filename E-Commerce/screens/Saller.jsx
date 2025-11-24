@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Image, ActivityIndicator } from 'react-native';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import Menu from '../components/Menu';
+import { uploadToCloudinary } from '../services/cloudinary';
+import api from '../services/api';
 
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
@@ -17,7 +19,9 @@ export default function Saller({ navigation }) {
   const [filterCategory, setFilterCategory] = useState('all');
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -25,11 +29,82 @@ export default function Saller({ navigation }) {
     price: '',
     stock: '',
     description: '',
-    image: null
+    image: null,
+    imageUrl: null
   });
 
   const categories = ['Processador', 'Placa de Vídeo', 'Memória RAM', 'SSD', 'Placa-Mãe', 'Fonte', 'Gabinete', 'Cooler', 'Monitor'];
 
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      console.log('Buscando produtos da API...');
+      
+      const response = await api.get('/products/brl');
+      
+      console.log('Resposta da API:', response);
+      console.log('Response data:', response.data);
+      console.log('Response status:', response.status);
+      
+      if (response.data && Array.isArray(response.data)) {
+        const adaptedProducts = response.data.map(product => ({
+          id: product.id?.toString() || Math.random().toString(),
+          name: product.model || product.description || 'Produto sem nome',
+          category: product.brand || product.category || 'Hardware',
+          price: product.price || 0,
+          stock: product.stock || 0,
+          description: product.description || '',
+          image: product.imageUrl,
+          imageUrl: product.imageUrl,
+          date: product.createdAt || new Date().toLocaleDateString(),
+          sales: product.sales || 0
+        }));
+        
+        console.log('Produtos adaptados:', adaptedProducts);
+        setProducts(adaptedProducts);
+      } else if (response.data && typeof response.data === 'object') {
+        console.log('Response.data é um objeto, tentando encontrar array...');
+        
+        const possibleArrays = Object.values(response.data).find(item => Array.isArray(item));
+        
+        if (possibleArrays && Array.isArray(possibleArrays)) {
+          const adaptedProducts = possibleArrays.map(product => ({
+            id: product.id?.toString() || Math.random().toString(),
+            name: product.model || product.description || 'Produto sem nome',
+            category: product.brand || product.category || 'Hardware',
+            price: product.price || 0,
+            stock: product.stock || 0,
+            description: product.description || '',
+            image: product.imageUrl,
+            imageUrl: product.imageUrl,
+            date: product.createdAt || new Date().toLocaleDateString(),
+            sales: product.sales || 0
+          }));
+          
+          console.log('Produtos encontrados em objeto:', adaptedProducts);
+          setProducts(adaptedProducts);
+        } else {
+          console.log('Nenhum array encontrado no response.data');
+          setProducts([]);
+        }
+      } else {
+        console.log('Response.data não é um array:', response.data);
+        setProducts([]);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+      console.error('Detalhes do erro:', error.response?.data);
+      Alert.alert('Erro', 'Não foi possível carregar os produtos');
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const totalProducts = products.length;
@@ -46,66 +121,182 @@ export default function Saller({ navigation }) {
   });
 
   const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permissão necessária', 'Precisamos de acesso à galeria.');
+        return;
+      }
 
-    if (!result.canceled) {
-      setNewProduct({...newProduct, image: result.assets[0].uri});
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0].uri) {
+        setUploading(true);
+        
+        try {
+          const cloudinaryUrl = await uploadToCloudinary(result.assets[0].uri);
+          
+          setNewProduct({
+            ...newProduct, 
+            image: result.assets[0].uri,
+            imageUrl: cloudinaryUrl
+          });
+          
+          Alert.alert('Sucesso', 'Imagem carregada com sucesso!');
+        } catch (uploadError) {
+          Alert.alert('Erro no upload', 'Não foi possível enviar a imagem para a nuvem');
+          console.error('Upload error:', uploadError);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao selecionar imagem:', error);
+      Alert.alert('Erro', 'Não foi possível carregar a imagem');
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handleAddProduct = () => {
+  const handleAddProduct = async () => {
     if (!newProduct.name || !newProduct.price || !newProduct.stock) {
       Alert.alert('Erro', 'Preencha os campos obrigatórios');
       return;
     }
 
-    const product = {
-      id: Date.now().toString(),
-      ...newProduct,
-      price: parseFloat(newProduct.price),
-      stock: parseInt(newProduct.stock),
-      date: new Date().toLocaleDateString(),
-      sales: 0
-    };
+    if (!newProduct.imageUrl) {
+      Alert.alert('Atenção', 'É necessário adicionar uma imagem do produto');
+      return;
+    }
 
-    setProducts([...products, product]);
-    setNewProduct({ name: '', category: '', price: '', stock: '', description: '', image: null });
-    Alert.alert('Sucesso', 'Produto cadastrado!');
-    setActiveTab('list');
+    setSaving(true);
+
+    try {
+      const productData = {
+        description: newProduct.description || `${newProduct.name} - ${newProduct.category}`,
+        brand: newProduct.category || 'Hardware',
+        model: newProduct.name,
+        currency: 'BRL',
+        price: parseFloat(newProduct.price),
+        imageUrl: newProduct.imageUrl,
+        category: newProduct.category,
+        stock: parseInt(newProduct.stock)
+      };
+
+      console.log('Enviando para API:', productData);
+
+      const response = await api.post('/ws/products', productData);
+      console.log('Resposta do POST:', response);
+
+      if (response.status === 200 || response.status === 201) {
+        Alert.alert('Sucesso', 'Produto cadastrado na API!');
+        
+        await fetchProducts();
+        
+        setNewProduct({ 
+          name: '', 
+          category: '', 
+          price: '', 
+          stock: '', 
+          description: '', 
+          image: null,
+          imageUrl: null 
+        });
+        
+        setActiveTab('list');
+      } else {
+        throw new Error('Erro na resposta da API');
+      }
+    } catch (error) {
+      console.error('Erro ao cadastrar produto:', error);
+      console.error('Detalhes do erro:', error.response?.data);
+      Alert.alert('Erro', 'Não foi possível cadastrar o produto na API');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleEditProduct = () => {
-    const updatedProducts = products.map(p => 
-      p.id === editingProduct.id ? editingProduct : p
-    );
-    setProducts(updatedProducts);
-    setEditModalVisible(false);
-    Alert.alert('Sucesso', 'Produto atualizado!');
+  const handleEditProduct = async () => {
+    if (!editingProduct.name || !editingProduct.price || !editingProduct.stock) {
+      Alert.alert('Erro', 'Preencha os campos obrigatórios');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const productData = {
+        description: editingProduct.description || `${editingProduct.name} - ${editingProduct.category}`,
+        brand: editingProduct.category || 'Hardware',
+        model: editingProduct.name,
+        currency: 'BRL',
+        price: parseFloat(editingProduct.price),
+        imageUrl: editingProduct.imageUrl,
+        category: editingProduct.category,
+        stock: parseInt(editingProduct.stock)
+      };
+
+      console.log('Atualizando produto:', productData);
+
+      const response = await api.put(`/ws/products/${editingProduct.id}`, productData);
+      console.log('Resposta do PUT:', response);
+
+      if (response.status === 200 || response.status === 204) {
+        Alert.alert('Sucesso', 'Produto atualizado na API!');
+        
+        await fetchProducts();
+        
+        setEditModalVisible(false);
+      } else {
+        throw new Error('Erro na resposta da API');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar produto:', error);
+      console.error('Detalhes do erro:', error.response?.data);
+      Alert.alert('Erro', 'Não foi possível atualizar o produto na API');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const openEditModal = (product) => {
-    setEditingProduct({...product});
-    setEditModalVisible(true);
-  };
-
-  const deleteProduct = (id) => {
+  const deleteProduct = async (id) => {
     Alert.alert(
-      'Confirmar',
-      'Deseja excluir este produto?',
+      'Confirmar Exclusão',
+      'Deseja excluir este produto permanentemente?',
       [
         { text: 'Cancelar', style: 'cancel' },
         { 
           text: 'Excluir', 
           style: 'destructive',
-          onPress: () => setProducts(products.filter(p => p.id !== id))
+          onPress: async () => {
+            try {
+              console.log('Excluindo produto ID:', id);
+              const response = await api.delete(`/ws/products/${id}`);
+              console.log('Resposta do DELETE:', response);
+              
+              if (response.status === 200 || response.status === 204) {
+                Alert.alert('Sucesso', 'Produto excluído da API!');
+                await fetchProducts();
+              } else {
+                throw new Error('Erro na resposta da API');
+              }
+            } catch (error) {
+              console.error('Erro ao excluir produto:', error);
+              console.error('Detalhes do erro:', error.response?.data);
+              Alert.alert('Erro', 'Não foi possível excluir o produto da API');
+            }
+          }
         }
       ]
     );
+  };
+
+  const openEditModal = (product) => {
+    setEditingProduct({...product});
+    setEditModalVisible(true);
   };
 
   const StatsOverview = () => (
@@ -128,12 +319,19 @@ export default function Saller({ navigation }) {
     </View>
   );
 
-  // Tela de Listagem Melhorada
   const ProductList = () => (
     <View style={styles.tabContent}>
       <View style={styles.header}>
         <Text style={styles.title}>Meus Produtos</Text>
         <Text style={styles.subtitle}>{products.length} produtos cadastrados</Text>
+        
+        <TouchableOpacity 
+          style={styles.reloadButton}
+          onPress={fetchProducts}
+        >
+          <Icon name="refresh" size={20} color="#007AFF" />
+          <Text style={styles.reloadText}>Recarregar</Text>
+        </TouchableOpacity>
       </View>
 
       <StatsOverview />
@@ -186,7 +384,12 @@ export default function Saller({ navigation }) {
         </ScrollView>
       </View>
 
-      {filteredProducts.length === 0 ? (
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Carregando produtos...</Text>
+        </View>
+      ) : filteredProducts.length === 0 ? (
         <View style={styles.emptyState}>
           <Icon name="inventory" size={64} color="#666" />
           <Text style={styles.emptyText}>
@@ -246,6 +449,7 @@ export default function Saller({ navigation }) {
       visible={editModalVisible}
       animationType="slide"
       transparent={true}
+      onRequestClose={() => setEditModalVisible(false)}
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
@@ -258,27 +462,61 @@ export default function Saller({ navigation }) {
           
           {editingProduct && (
             <ScrollView style={styles.modalBody}>
-              <Text style={styles.label}>Nome do Produto</Text>
+              <Text style={styles.label}>Nome do Produto *</Text>
               <TextInput
                 style={styles.input}
                 value={editingProduct.name}
                 onChangeText={(text) => setEditingProduct({...editingProduct, name: text})}
+                placeholder="Nome do produto"
               />
 
-              <Text style={styles.label}>Preço (R$)</Text>
+              <Text style={styles.label}>Categoria</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categories}>
+                {categories.map(category => (
+                  <TouchableOpacity
+                    key={category}
+                    style={[
+                      styles.categoryButton,
+                      editingProduct.category === category && styles.categoryButtonActive
+                    ]}
+                    onPress={() => setEditingProduct({...editingProduct, category})}
+                  >
+                    <Text style={[
+                      styles.categoryText,
+                      editingProduct.category === category && styles.categoryTextActive
+                    ]}>
+                      {category}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <Text style={styles.label}>Preço (R$) *</Text>
               <TextInput
                 style={styles.input}
                 value={editingProduct.price.toString()}
                 onChangeText={(text) => setEditingProduct({...editingProduct, price: parseFloat(text) || 0})}
                 keyboardType="numeric"
+                placeholder="0.00"
               />
 
-              <Text style={styles.label}>Estoque</Text>
+              <Text style={styles.label}>Estoque *</Text>
               <TextInput
                 style={styles.input}
                 value={editingProduct.stock.toString()}
                 onChangeText={(text) => setEditingProduct({...editingProduct, stock: parseInt(text) || 0})}
                 keyboardType="numeric"
+                placeholder="0"
+              />
+
+              <Text style={styles.label}>Descrição</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={editingProduct.description}
+                onChangeText={(text) => setEditingProduct({...editingProduct, description: text})}
+                placeholder="Descrição do produto..."
+                multiline
+                numberOfLines={3}
               />
 
               <View style={styles.modalButtons}>
@@ -291,8 +529,13 @@ export default function Saller({ navigation }) {
                 <TouchableOpacity 
                   style={[styles.modalButton, styles.saveButton]}
                   onPress={handleEditProduct}
+                  disabled={saving}
                 >
-                  <Text style={styles.saveButtonText}>Salvar</Text>
+                  {saving ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.saveButtonText}>Salvar Alterações</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -310,13 +553,30 @@ export default function Saller({ navigation }) {
       </View>
 
       <View style={styles.form}>
-        <TouchableOpacity style={styles.imageUpload} onPress={pickImage}>
-          {newProduct.image ? (
-            <Image source={{ uri: newProduct.image }} style={styles.uploadedImage} />
+        <TouchableOpacity 
+          style={styles.imageUpload} 
+          onPress={pickImage}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <View style={styles.uploadPlaceholder}>
+              <ActivityIndicator size="large" color="#007AFF" />
+              <Text style={styles.uploadText}>Enviando para nuvem...</Text>
+            </View>
+          ) : newProduct.image ? (
+            <View>
+              <Image source={{ uri: newProduct.image }} style={styles.uploadedImage} />
+              <Text style={styles.uploadSuccessText}>
+                ✅ Imagem pronta para envio
+              </Text>
+            </View>
           ) : (
             <View style={styles.uploadPlaceholder}>
               <Icon name="add-a-photo" size={40} color="#666" />
               <Text style={styles.uploadText}>Adicionar Imagem</Text>
+              <Text style={styles.uploadSubtext}>
+                A imagem será salva na nuvem (Cloudinary)
+              </Text>
             </View>
           )}
         </TouchableOpacity>
@@ -383,9 +643,24 @@ export default function Saller({ navigation }) {
           numberOfLines={3}
         />
 
-        <TouchableOpacity style={styles.addButton} onPress={handleAddProduct}>
-          <Icon name="add" size={20} color="#fff" />
-          <Text style={styles.addButtonText}>Cadastrar Produto</Text>
+        <TouchableOpacity 
+          style={[
+            styles.addButton, 
+            (uploading || saving || !newProduct.imageUrl) && styles.disabledButton
+          ]} 
+          onPress={handleAddProduct}
+          disabled={uploading || saving || !newProduct.imageUrl}
+        >
+          {saving ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <>
+              <Icon name="add" size={20} color="#fff" />
+              <Text style={styles.addButtonText}>
+                {newProduct.imageUrl ? 'Cadastrar Produto' : 'Adicione uma imagem'}
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -400,7 +675,6 @@ export default function Saller({ navigation }) {
             onPress={() => setActiveTab('list')}
           >
             <AntDesign name="product" size={24} color="#666" />
-
             <Text style={[styles.tabText, activeTab === 'list' && styles.activeTabText]}>
               Meus Produtos
             </Text>
@@ -419,7 +693,6 @@ export default function Saller({ navigation }) {
 
         {activeTab === 'list' ? <ProductList /> : <AddProduct />}
         
-
         <EditProductModal />
       </View>
       <Menu navigation={navigation} />
@@ -527,7 +800,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 
-  // ======== FILTRO - CORRIGIDO ========
+  // ======== FILTRO ========
   filterSection: {
     paddingHorizontal: 20,
     marginBottom: 15,
@@ -741,10 +1014,26 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 8,
   },
+  uploadSubtext: {
+    color: '#888',
+    fontSize: 11,
+    marginTop: 4,
+    textAlign: 'center',
+  },
   uploadedImage: {
     width: '100%',
     height: '100%',
     borderRadius: 8,
+  },
+  uploadSuccessText: {
+    position: 'absolute',
+    bottom: 10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    color: '#4CD964',
+    padding: 4,
+    borderRadius: 4,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 
   // ======== BOTÃO CADASTRAR ========
@@ -757,6 +1046,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
+  },
+  disabledButton: {
+    backgroundColor: '#666',
   },
   addButtonText: {
     color: '#fff',
@@ -815,5 +1107,35 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+
+  // ======== LOADING ========
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    color: '#ccc',
+    marginTop: 10,
+    fontSize: 16,
+  },
+
+  // ======== RELOAD BUTTON ========
+  reloadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    marginTop: 10,
+    padding: 8,
+    backgroundColor: '#1e1e1e',
+    borderRadius: 8,
+    gap: 6,
+  },
+  reloadText: {
+    color: '#007AFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
