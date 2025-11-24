@@ -54,7 +54,7 @@ export default function DescriptionUser() {
   const displayData = {
     nome: user.name || 'Usuário',
     email: user.email || 'Email não disponível',
-    telefone: user.phone || 'Não cadastrado', 
+    telefone: user.phoneNumber || 'Não cadastrado', 
     endereco: user.address || 'Não cadastrado',
     avatar: user.avatar || 'https://via.placeholder.com/150', 
   };

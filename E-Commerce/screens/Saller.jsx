@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Image, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, 
+  TextInput, Alert, Modal, Image, ActivityIndicator, RefreshControl 
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,6 +10,7 @@ import Menu from '../components/Menu';
 import { uploadToCloudinary } from '../services/cloudinary';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
@@ -25,6 +29,7 @@ export default function Saller({ navigation }) {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -35,62 +40,73 @@ export default function Saller({ navigation }) {
     imageUrl: null
   });
 
-  const categories = ['Processador', 'Placa de Vídeo', 'Memória RAM', 'SSD', 'Placa-Mãe', 'Fonte', 'Gabinete', 'Cooler', 'Monitor'];
+  const categories = ['PROCESSOR', 'MOTHERBOARD', 'RAM_MEMORY', 'STORAGE', 'VIDEO_CARD', 'COOLER', 'POWER_SUPPLY', 'CASE', 'PERIPHERAL', 'OTHER'];
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchProducts();
+    }, [])
+  );
 
+  // Calcula estatísticas sempre que a lista de produtos muda
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (products) {
+      const totalProducts = products.length;
+      const lowStock = products.filter(p => p.stock < 5).length;
+      // Garante que o preço seja tratado como número para a soma
+      const totalValue = products.reduce((sum, p) => sum + (Number(p.price) || 0), 0);
+
+      setStats({ totalProducts, lowStock, totalValue });
+    }
+  }, [products]);
 
   const fetchProducts = async () => {
     try {
-      setLoading(true);
-      console.log('Buscando produtos da API...');
-
+      if(!refreshing) setLoading(true);
+      
       const response = await api.get('/ws/product/myproducts');
 
-      console.log('Resposta da API:', response);
-      console.log('Response data:', response.data);
-      console.log('Response status:', response.status);
-
-      if (response.data && Array.isArray(response.data)) {
-        const adaptedProducts = response.data.map(product => ({
-          id: product.id?.toString() || Math.random().toString(),
-          name: product.model || product.description || 'Produto sem nome',
-          category: product.type || product.brand || 'Hardware',
-          price: product.price || 0,
+      if (response.data) {
+        // Suporte tanto para retorno direto de array quanto Pageable do Spring
+        const rawData = Array.isArray(response.data) ? response.data : (response.data.content || []);
+        
+        const adaptedProducts = rawData.map(product => ({
+          id: product.id,
+          title: product.model || product.description || 'Produto sem nome',
+          category: product.type || product.brand || 'Outros',
+          brand: product.brand,
+          // Conversão forçada para Float para evitar erros de cálculo
+          price: product.price ? parseFloat(product.price) : 0,
           description: product.description || '',
-          image: product.imageurl,
-          imageUrl: product.imageurl,
-          date: product.createdAt || new Date().toLocaleDateString(),
+          image: product.imageUrl || 'https://via.placeholder.com/150',
+          imageUrl: product.imageUrl,
+          stock: product.stock || 0,
+          currency: product.currency
         }));
 
-        console.log('Produtos adaptados:', adaptedProducts);
         setProducts(adaptedProducts);
       } else {
-        console.log('Response.data não é um array:', response.data);
         setProducts([]);
       }
     } catch (error) {
       console.error('Erro ao carregar produtos:', error);
-      console.error('Detalhes do erro:', error.response?.data);
-      Alert.alert('Erro', 'Não foi possível carregar os produtos');
+      if (error.response?.status !== 404) {
+        Alert.alert('Aviso', 'Não foi possível carregar seus produtos.');
+      }
       setProducts([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    const totalProducts = products.length;
-    const lowStock = 0;
-    const totalValue = products.reduce((sum, p) => sum + (p.price || 0), 0);
-
-    setStats({ totalProducts, lowStock, totalValue });
-  }, [products]);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchProducts();
+  }, []);
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
@@ -107,93 +123,83 @@ export default function Saller({ navigation }) {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8,
+        quality: 0.7,
       });
 
       if (!result.canceled && result.assets[0].uri) {
         setUploading(true);
-
         try {
           const cloudinaryUrl = await uploadToCloudinary(result.assets[0].uri);
-
-          setNewProduct({
-            ...newProduct,
+          setNewProduct(prev => ({
+            ...prev,
             image: result.assets[0].uri,
             imageUrl: cloudinaryUrl
-          });
-
+          }));
           Alert.alert('Sucesso', 'Imagem carregada com sucesso!');
         } catch (uploadError) {
-          Alert.alert('Erro no upload', 'Não foi possível enviar a imagem para a nuvem');
-          console.error('Upload error:', uploadError);
+          Alert.alert('Erro no upload', 'Não foi possível enviar a imagem.');
+        } finally {
+          setUploading(false);
         }
       }
     } catch (error) {
-      console.error('Erro ao selecionar imagem:', error);
       Alert.alert('Erro', 'Não foi possível carregar a imagem');
-    } finally {
       setUploading(false);
     }
   };
 
   const handleAddProduct = async () => {
     if (!newProduct.name || !newProduct.price) {
-      Alert.alert('Erro', 'Preencha os campos obrigatórios');
+      Alert.alert('Erro', 'Preencha os campos obrigatórios (Nome e Preço)');
       return;
     }
 
     if (!newProduct.imageUrl) {
-      Alert.alert('Atenção', 'É necessário adicionar uma imagem do produto');
+      Alert.alert('Atenção', 'É necessário adicionar uma imagem do produto.');
       return;
     }
 
     setSaving(true);
 
     try {
+      const priceFormatted = parseFloat(newProduct.price.toString().replace(',', '.'));
+
       const productData = {
-        description: newProduct.description || `${newProduct.name} - ${newProduct.category}`,
-        brand: newProduct.category || 'Hardware',
+        description: newProduct.description || newProduct.name,
+        brand: 'Generic', 
         model: newProduct.name,
-        currency: 'USD',
-        price: parseFloat(newProduct.price),
-        imageurl: newProduct.imageUrl,
-        type: newProduct.category || 'Hardware'
+        currency: 'BRL',
+        price: priceFormatted,
+        imageUrl: newProduct.imageUrl,
+        type: newProduct.category || 'OTHER'
       };
 
-      console.log('Enviando para API:', productData);
+      await api.post('/ws/product', productData);
+      
+      Alert.alert('Sucesso', 'Produto cadastrado!');
+      
+      setNewProduct({
+        name: '',
+        category: '',
+        price: '',
+        description: '',
+        image: null,
+        imageUrl: null
+      });
 
-      const response = await api.post('/ws/products', productData);
-      console.log('Resposta do POST:', response);
+      setActiveTab('list');
+      fetchProducts();
 
-      if (response.status === 200 || response.status === 201) {
-        Alert.alert('Sucesso', 'Produto cadastrado na API!');
-
-        await fetchProducts();
-
-        setNewProduct({
-          name: '',
-          category: '',
-          price: '',
-          description: '',
-          image: null,
-          imageUrl: null
-        });
-
-        setActiveTab('list');
-      } else {
-        throw new Error('Erro na resposta da API');
-      }
     } catch (error) {
-      console.error('Erro ao cadastrar produto:', error);
-      console.error('Detalhes do erro:', error.response?.data);
-      Alert.alert('Erro', 'Não foi possível cadastrar o produto na API');
+      console.error('Erro ao cadastrar:', error);
+      Alert.alert('Erro', 'Não foi possível cadastrar o produto.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleEditProduct = async () => {
-    if (!editingProduct.name || !editingProduct.price) {
+    if (!editingProduct.title || !editingProduct.price) {
       Alert.alert('Erro', 'Preencha os campos obrigatórios');
       return;
     }
@@ -201,34 +207,24 @@ export default function Saller({ navigation }) {
     setSaving(true);
 
     try {
+      const priceFormatted = parseFloat(editingProduct.price.toString().replace(',', '.'));
+
       const productData = {
-        description: editingProduct.description || `${editingProduct.name} - ${editingProduct.category}`,
-        brand: editingProduct.category || 'Hardware',
-        model: editingProduct.name,
-        currency: 'USD',
-        price: parseFloat(editingProduct.price),
-        imageurl: editingProduct.imageUrl,
-        type: editingProduct.category || 'Hardware'
+        description: editingProduct.description,
+        brand: editingProduct.brand || 'Generic',
+        model: editingProduct.title,
+        currency: editingProduct.currency || 'BRL',
+        price: priceFormatted,
+        imageUrl: editingProduct.imageUrl,
+        type: editingProduct.category
       };
 
-      console.log('Atualizando produto:', productData);
-
-      const response = await api.put(`/ws/products/${editingProduct.id}`, productData);
-      console.log('Resposta do PUT:', response);
-
-      if (response.status === 200 || response.status === 204) {
-        Alert.alert('Sucesso', 'Produto atualizado na API!');
-
-        await fetchProducts();
-
-        setEditModalVisible(false);
-      } else {
-        throw new Error('Erro na resposta da API');
-      }
+      await api.put(`/ws/product/${editingProduct.id}`, productData);
+      Alert.alert('Sucesso', 'Produto atualizado!');
+      setEditModalVisible(false);
+      fetchProducts();
     } catch (error) {
-      console.error('Erro ao atualizar produto:', error);
-      console.error('Detalhes do erro:', error.response?.data);
-      Alert.alert('Erro', 'Não foi possível atualizar o produto na API');
+      Alert.alert('Erro', 'Não foi possível atualizar o produto.');
     } finally {
       setSaving(false);
     }
@@ -245,20 +241,11 @@ export default function Saller({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('Excluindo produto ID:', id);
-              const response = await api.delete(`/ws/products/${id}`);
-              console.log('Resposta do DELETE:', response);
-
-              if (response.status === 200 || response.status === 204) {
-                Alert.alert('Sucesso', 'Produto excluído da API!');
-                await fetchProducts();
-              } else {
-                throw new Error('Erro na resposta da API');
-              }
+              await api.delete(`/ws/product/${id}`);
+              Alert.alert('Sucesso', 'Produto excluído!');
+              fetchProducts();
             } catch (error) {
-              console.error('Erro ao excluir produto:', error);
-              console.error('Detalhes do erro:', error.response?.data);
-              Alert.alert('Erro', 'Não foi possível excluir o produto da API');
+              Alert.alert('Erro', 'Não foi possível excluir o produto.');
             }
           }
         }
@@ -271,7 +258,8 @@ export default function Saller({ navigation }) {
     setEditModalVisible(true);
   };
 
-  const StatsOverview = () => (
+  // Funções de Renderização para evitar perda de foco
+  const renderStatsOverview = () => (
     <View style={styles.statsContainer}>
       <View style={styles.statCard}>
         <AntDesign name="product" size={24} color="#6366f1" />
@@ -291,28 +279,21 @@ export default function Saller({ navigation }) {
     </View>
   );
 
-  const ProductList = () => (
+  const renderProductList = () => (
     <View style={styles.tabContent}>
-      <LinearGradient
-        colors={['#0f0f0f', '#1a1a1a']}
-        style={styles.header}
-      >
+      <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.headerTitle}>
             <Text style={styles.title}>Meus Produtos</Text>
             <Text style={styles.subtitle}>{products.length} produtos cadastrados</Text>
           </View>
-
-          <TouchableOpacity
-            style={styles.reloadButton}
-            onPress={fetchProducts}
-          >
+          <TouchableOpacity style={styles.reloadButton} onPress={fetchProducts}>
             <Icon name="refresh" size={20} color="#6366f1" />
           </TouchableOpacity>
         </View>
       </LinearGradient>
 
-      <StatsOverview />
+      {renderStatsOverview()}
 
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
@@ -334,19 +315,12 @@ export default function Saller({ navigation }) {
 
       <View style={styles.filterSection}>
         <Text style={styles.filterLabel}>Filtrar por categoria:</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filterContainer}
-          contentContainerStyle={styles.filterContent}
-        >
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer} contentContainerStyle={styles.filterContent}>
           <TouchableOpacity
             style={[styles.filterChip, filterCategory === 'all' && styles.filterChipActive]}
             onPress={() => setFilterCategory('all')}
           >
-            <Text style={[styles.filterChipText, filterCategory === 'all' && styles.filterChipTextActive]}>
-              Todos
-            </Text>
+            <Text style={[styles.filterChipText, filterCategory === 'all' && styles.filterChipTextActive]}>Todos</Text>
           </TouchableOpacity>
           {categories.map(category => (
             <TouchableOpacity
@@ -354,15 +328,13 @@ export default function Saller({ navigation }) {
               style={[styles.filterChip, filterCategory === category && styles.filterChipActive]}
               onPress={() => setFilterCategory(category)}
             >
-              <Text style={[styles.filterChipText, filterCategory === category && styles.filterChipTextActive]}>
-                {category}
-              </Text>
+              <Text style={[styles.filterChipText, filterCategory === category && styles.filterChipTextActive]}>{category}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      {loading ? (
+      {loading && !refreshing ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#6366f1" />
           <Text style={styles.loadingText}>Carregando produtos...</Text>
@@ -373,15 +345,13 @@ export default function Saller({ navigation }) {
           <Text style={styles.emptyText}>
             {searchQuery || filterCategory !== 'all' ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
           </Text>
-          <Text style={styles.emptySubtext}>
-            {searchQuery || filterCategory !== 'all' ? 'Tente alterar os filtros' : 'Comece cadastrando seu primeiro produto'}
-          </Text>
         </View>
       ) : (
         <ScrollView
           style={styles.productList}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.productListContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />}
         >
           {filteredProducts.map(product => (
             <TouchableOpacity
@@ -389,33 +359,18 @@ export default function Saller({ navigation }) {
               style={styles.productCard}
               onPress={() => navigation.navigate('ProductDetail', { product })}
             >
-              {product.image && (
-                <Image source={{ uri: product.image }} style={styles.productImage} />
-              )}
+              <Image source={{ uri: product.image }} style={styles.productImage} defaultSource={{ uri: 'https://via.placeholder.com/150' }} />
               <View style={styles.productInfo}>
-                <View style={styles.productHeader}>
-                  <Text style={styles.productName}>{product.name}</Text>
-                </View>
+                <Text style={styles.productName}>{product.title}</Text>
                 <Text style={styles.productCategory}>{product.category}</Text>
-                <View style={styles.productDetails}>
-                  <Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
-                </View>
-                <Text style={styles.productDescription} numberOfLines={2}>
-                  {product.description}
-                </Text>
+                <Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
+                <Text style={styles.productDescription} numberOfLines={2}>{product.description}</Text>
               </View>
-
               <View style={styles.actionButtons}>
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => openEditModal(product)}
-                >
+                <TouchableOpacity style={styles.editButton} onPress={() => openEditModal(product)}>
                   <Icon name="edit" size={20} color="#6366f1" />
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => deleteProduct(product.id)}
-                >
+                <TouchableOpacity style={styles.deleteButton} onPress={() => deleteProduct(product.id)}>
                   <Icon name="delete" size={20} color="#ff4444" />
                 </TouchableOpacity>
               </View>
@@ -426,7 +381,7 @@ export default function Saller({ navigation }) {
     </View>
   );
 
-  const EditProductModal = () => (
+  const renderEditProductModal = () => (
     <Modal
       visible={editModalVisible}
       animationType="slide"
@@ -447,9 +402,8 @@ export default function Saller({ navigation }) {
               <Text style={styles.label}>Nome do Produto *</Text>
               <TextInput
                 style={styles.input}
-                value={editingProduct.name}
-                onChangeText={(text) => setEditingProduct({ ...editingProduct, name: text })}
-                placeholder="Nome do produto"
+                value={editingProduct.title}
+                onChangeText={(text) => setEditingProduct({ ...editingProduct, title: text })}
                 placeholderTextColor="#666"
               />
 
@@ -458,18 +412,10 @@ export default function Saller({ navigation }) {
                 {categories.map(category => (
                   <TouchableOpacity
                     key={category}
-                    style={[
-                      styles.categoryButton,
-                      editingProduct.category === category && styles.categoryButtonActive
-                    ]}
+                    style={[styles.categoryButton, editingProduct.category === category && styles.categoryButtonActive]}
                     onPress={() => setEditingProduct({ ...editingProduct, category })}
                   >
-                    <Text style={[
-                      styles.categoryText,
-                      editingProduct.category === category && styles.categoryTextActive
-                    ]}>
-                      {category}
-                    </Text>
+                    <Text style={[styles.categoryText, editingProduct.category === category && styles.categoryTextActive]}>{category}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -478,9 +424,8 @@ export default function Saller({ navigation }) {
               <TextInput
                 style={styles.input}
                 value={editingProduct.price.toString()}
-                onChangeText={(text) => setEditingProduct({ ...editingProduct, price: parseFloat(text) || 0 })}
+                onChangeText={(text) => setEditingProduct({ ...editingProduct, price: text })}
                 keyboardType="numeric"
-                placeholder="0.00"
                 placeholderTextColor="#666"
               />
 
@@ -489,29 +434,17 @@ export default function Saller({ navigation }) {
                 style={[styles.input, styles.textArea]}
                 value={editingProduct.description}
                 onChangeText={(text) => setEditingProduct({ ...editingProduct, description: text })}
-                placeholder="Descrição do produto..."
-                placeholderTextColor="#666"
                 multiline
                 numberOfLines={3}
+                placeholderTextColor="#666"
               />
 
               <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => setEditModalVisible(false)}
-                >
+                <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setEditModalVisible(false)}>
                   <Text style={styles.cancelButtonText}>Cancelar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.saveButton]}
-                  onPress={handleEditProduct}
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text style={styles.saveButtonText}>Salvar Alterações</Text>
-                  )}
+                <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={handleEditProduct} disabled={saving}>
+                  {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveButtonText}>Salvar</Text>}
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -521,41 +454,29 @@ export default function Saller({ navigation }) {
     </Modal>
   );
 
-  const AddProduct = () => (
+  const renderAddProduct = () => (
     <ScrollView style={styles.tabContent}>
-      <LinearGradient
-        colors={['#0f0f0f', '#1a1a1a']}
-        style={styles.header}
-      >
+      <LinearGradient colors={['#0f0f0f', '#1a1a1a']} style={styles.header}>
         <Text style={styles.title}>Cadastrar Produto</Text>
         <Text style={styles.subtitle}>Preencha os dados do hardware</Text>
       </LinearGradient>
 
       <View style={styles.form}>
-        <TouchableOpacity
-          style={styles.imageUpload}
-          onPress={pickImage}
-          disabled={uploading}
-        >
+        <TouchableOpacity style={styles.imageUpload} onPress={pickImage} disabled={uploading}>
           {uploading ? (
             <View style={styles.uploadPlaceholder}>
               <ActivityIndicator size="large" color="#6366f1" />
-              <Text style={styles.uploadText}>Enviando para nuvem...</Text>
+              <Text style={styles.uploadText}>Enviando...</Text>
             </View>
           ) : newProduct.image ? (
             <View>
               <Image source={{ uri: newProduct.image }} style={styles.uploadedImage} />
-              <Text style={styles.uploadSuccessText}>
-                ✅ Imagem pronta para envio
-              </Text>
+              <Text style={styles.uploadSuccessText}>✅ Imagem carregada</Text>
             </View>
           ) : (
             <View style={styles.uploadPlaceholder}>
               <Icon name="add-a-photo" size={40} color="#666" />
               <Text style={styles.uploadText}>Adicionar Imagem</Text>
-              <Text style={styles.uploadSubtext}>
-                A imagem será salva na nuvem (Cloudinary)
-              </Text>
             </View>
           )}
         </TouchableOpacity>
@@ -564,7 +485,7 @@ export default function Saller({ navigation }) {
         <TextInput
           style={styles.input}
           value={newProduct.name}
-          onChangeText={(text) => setNewProduct({ ...newProduct, name: text })}
+          onChangeText={(text) => setNewProduct(prev => ({ ...prev, name: text }))}
           placeholder="Ex: RTX 4060 Ti 8GB"
           placeholderTextColor="#666"
         />
@@ -574,40 +495,30 @@ export default function Saller({ navigation }) {
           {categories.map(category => (
             <TouchableOpacity
               key={category}
-              style={[
-                styles.categoryButton,
-                newProduct.category === category && styles.categoryButtonActive
-              ]}
-              onPress={() => setNewProduct({ ...newProduct, category })}
+              style={[styles.categoryButton, newProduct.category === category && styles.categoryButtonActive]}
+              onPress={() => setNewProduct(prev => ({ ...prev, category }))}
             >
-              <Text style={[
-                styles.categoryText,
-                newProduct.category === category && styles.categoryTextActive
-              ]}>
-                {category}
-              </Text>
+              <Text style={[styles.categoryText, newProduct.category === category && styles.categoryTextActive]}>{category}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Preço (R$) *</Text>
-          <TextInput
-            style={styles.input}
-            value={newProduct.price}
-            onChangeText={(text) => setNewProduct({ ...newProduct, price: text })}
-            placeholder="0.00"
-            placeholderTextColor="#666"
-            keyboardType="numeric"
-          />
-        </View>
+        <Text style={styles.label}>Preço (R$) *</Text>
+        <TextInput
+          style={styles.input}
+          value={newProduct.price}
+          onChangeText={(text) => setNewProduct(prev => ({ ...prev, price: text }))}
+          placeholder="0.00"
+          placeholderTextColor="#666"
+          keyboardType="numeric"
+        />
 
         <Text style={styles.label}>Descrição</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
           value={newProduct.description}
-          onChangeText={(text) => setNewProduct({ ...newProduct, description: text })}
-          placeholder="Descreva as especificações do produto..."
+          onChangeText={(text) => setNewProduct(prev => ({ ...prev, description: text }))}
+          placeholder="Descreva as especificações..."
           placeholderTextColor="#666"
           multiline
           numberOfLines={3}
@@ -615,31 +526,12 @@ export default function Saller({ navigation }) {
 
         <View style={styles.publishSection}>
           <TouchableOpacity
-            style={[
-              styles.publishButton,
-              (uploading || saving || !newProduct.imageUrl) && styles.disabledButton
-            ]}
+            style={[styles.publishButton, (uploading || saving || !newProduct.imageUrl) && styles.disabledButton]}
             onPress={handleAddProduct}
             disabled={uploading || saving || !newProduct.imageUrl}
           >
-            {saving ? (
-              <>
-                <ActivityIndicator size="small" color="#fff" />
-                <Text style={styles.publishButtonText}>Publicando...</Text>
-              </>
-            ) : (
-              <>
-                <Entypo name="publish" size={24} color="#fff" />
-                <Text style={styles.publishButtonText}>PUBLICAR PRODUTO</Text>
-              </>
-            )}
+            {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.publishButtonText}>PUBLICAR PRODUTO</Text>}
           </TouchableOpacity>
-
-          {!newProduct.imageUrl && (
-            <Text style={styles.helperText}>
-              Adicione uma imagem para poder publicar
-            </Text>
-          )}
         </View>
       </View>
     </ScrollView>
@@ -649,36 +541,22 @@ export default function Saller({ navigation }) {
     <>
       <View style={styles.container}>
         <View style={styles.tabBar}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'list' && styles.activeTab]}
-            onPress={() => setActiveTab('list')}
-          >
-            <AntDesign name="product" size={24} color="#666" />
-            <Text style={[styles.tabText, activeTab === 'list' && styles.activeTabText]}>
-              Meus Produtos
-            </Text>
+          <TouchableOpacity style={[styles.tab, activeTab === 'list' && styles.activeTab]} onPress={() => setActiveTab('list')}>
+            <AntDesign name="product" size={24} color={activeTab === 'list' ? '#6366f1' : '#666'} />
+            <Text style={[styles.tabText, activeTab === 'list' && styles.activeTabText]}>Meus Produtos</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'add' && styles.activeTab]}
-            onPress={() => setActiveTab('add')}
-          >
-            <Entypo
-              name="publish"
-              size={24}
-              color={activeTab === 'add' ? '#6366f1' : '#666'}
-            />
-            <Text style={[styles.tabText, activeTab === 'add' && styles.activeTabText]}>
-              Cadastrar
-            </Text>
+          <TouchableOpacity style={[styles.tab, activeTab === 'add' && styles.activeTab]} onPress={() => setActiveTab('add')}>
+            <Entypo name="publish" size={24} color={activeTab === 'add' ? '#6366f1' : '#666'} />
+            <Text style={[styles.tabText, activeTab === 'add' && styles.activeTabText]}>Cadastrar</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.mainContent}>
-          {activeTab === 'list' ? <ProductList /> : <AddProduct />}
+          {activeTab === 'list' ? renderProductList() : renderAddProduct()}
         </View>
 
-        <EditProductModal />
+        {renderEditProductModal()}
       </View>
 
       <Menu navigation={navigation} />
