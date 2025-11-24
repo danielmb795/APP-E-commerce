@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Image, ActivityIndicator } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import Menu from '../components/Menu';
 import { uploadToCloudinary } from '../services/cloudinary';
 import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
@@ -12,6 +14,7 @@ import Fontisto from '@expo/vector-icons/Fontisto';
 import Entypo from '@expo/vector-icons/Entypo';
 
 export default function Saller({ navigation }) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('list');
   const [products, setProducts] = useState([]);
   const [stats, setStats] = useState({ totalProducts: 0, lowStock: 0, totalValue: 0 });
@@ -43,13 +46,13 @@ export default function Saller({ navigation }) {
     try {
       setLoading(true);
       console.log('Buscando produtos da API...');
-      
-      const response = await api.get('/products/brl');
-      
+
+      const response = await api.get('/ws/product/myproducts');
+
       console.log('Resposta da API:', response);
       console.log('Response data:', response.data);
       console.log('Response status:', response.status);
-      
+
       if (response.data && Array.isArray(response.data)) {
         const adaptedProducts = response.data.map(product => ({
           id: product.id?.toString() || Math.random().toString(),
@@ -61,7 +64,7 @@ export default function Saller({ navigation }) {
           imageUrl: product.imageurl,
           date: product.createdAt || new Date().toLocaleDateString(),
         }));
-        
+
         console.log('Produtos adaptados:', adaptedProducts);
         setProducts(adaptedProducts);
       } else {
@@ -82,7 +85,7 @@ export default function Saller({ navigation }) {
     const totalProducts = products.length;
     const lowStock = 0;
     const totalValue = products.reduce((sum, p) => sum + (p.price || 0), 0);
-    
+
     setStats({ totalProducts, lowStock, totalValue });
   }, [products]);
 
@@ -109,16 +112,16 @@ export default function Saller({ navigation }) {
 
       if (!result.canceled && result.assets[0].uri) {
         setUploading(true);
-        
+
         try {
           const cloudinaryUrl = await uploadToCloudinary(result.assets[0].uri);
-          
+
           setNewProduct({
-            ...newProduct, 
+            ...newProduct,
             image: result.assets[0].uri,
             imageUrl: cloudinaryUrl
           });
-          
+
           Alert.alert('Sucesso', 'Imagem carregada com sucesso!');
         } catch (uploadError) {
           Alert.alert('Erro no upload', 'Não foi possível enviar a imagem para a nuvem');
@@ -164,18 +167,18 @@ export default function Saller({ navigation }) {
 
       if (response.status === 200 || response.status === 201) {
         Alert.alert('Sucesso', 'Produto cadastrado na API!');
-        
+
         await fetchProducts();
-        
-        setNewProduct({ 
-          name: '', 
-          category: '', 
-          price: '', 
-          description: '', 
+
+        setNewProduct({
+          name: '',
+          category: '',
+          price: '',
+          description: '',
           image: null,
-          imageUrl: null 
+          imageUrl: null
         });
-        
+
         setActiveTab('list');
       } else {
         throw new Error('Erro na resposta da API');
@@ -215,9 +218,9 @@ export default function Saller({ navigation }) {
 
       if (response.status === 200 || response.status === 204) {
         Alert.alert('Sucesso', 'Produto atualizado na API!');
-        
+
         await fetchProducts();
-        
+
         setEditModalVisible(false);
       } else {
         throw new Error('Erro na resposta da API');
@@ -237,15 +240,15 @@ export default function Saller({ navigation }) {
       'Deseja excluir este produto permanentemente?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Excluir', 
+        {
+          text: 'Excluir',
           style: 'destructive',
           onPress: async () => {
             try {
               console.log('Excluindo produto ID:', id);
               const response = await api.delete(`/ws/products/${id}`);
               console.log('Resposta do DELETE:', response);
-              
+
               if (response.status === 200 || response.status === 204) {
                 Alert.alert('Sucesso', 'Produto excluído da API!');
                 await fetchProducts();
@@ -264,24 +267,24 @@ export default function Saller({ navigation }) {
   };
 
   const openEditModal = (product) => {
-    setEditingProduct({...product});
+    setEditingProduct({ ...product });
     setEditModalVisible(true);
   };
 
   const StatsOverview = () => (
     <View style={styles.statsContainer}>
       <View style={styles.statCard}>
-        <AntDesign name="product" size={24} color="blue" />
+        <AntDesign name="product" size={24} color="#6366f1" />
         <Text style={styles.statNumber}>{stats.totalProducts}</Text>
         <Text style={styles.statLabel}>Produtos</Text>
       </View>
       <View style={styles.statCard}>
-        <AntDesign name="stock" size={24} color="orange" />
+        <AntDesign name="stock" size={24} color="#f59e0b" />
         <Text style={styles.statNumber}>{stats.lowStock}</Text>
         <Text style={styles.statLabel}>Estoque Baixo</Text>
       </View>
       <View style={styles.statCard}>
-        <FontAwesome6 name="money-bill-transfer" size={24} color="green" />
+        <FontAwesome6 name="money-bill-transfer" size={24} color="#10b981" />
         <Text style={styles.statNumber}>R$ {stats.totalValue.toFixed(2)}</Text>
         <Text style={styles.statLabel}>Valor Total</Text>
       </View>
@@ -290,21 +293,24 @@ export default function Saller({ navigation }) {
 
   const ProductList = () => (
     <View style={styles.tabContent}>
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#0f0f0f', '#1a1a1a']}
+        style={styles.header}
+      >
         <View style={styles.headerRow}>
           <View style={styles.headerTitle}>
             <Text style={styles.title}>Meus Produtos</Text>
             <Text style={styles.subtitle}>{products.length} produtos cadastrados</Text>
           </View>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.reloadButton}
             onPress={fetchProducts}
           >
-            <Icon name="refresh" size={20} color="#007AFF" />
+            <Icon name="refresh" size={20} color="#6366f1" />
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
 
       <StatsOverview />
 
@@ -328,9 +334,9 @@ export default function Saller({ navigation }) {
 
       <View style={styles.filterSection}>
         <Text style={styles.filterLabel}>Filtrar por categoria:</Text>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
           style={styles.filterContainer}
           contentContainerStyle={styles.filterContent}
         >
@@ -358,7 +364,7 @@ export default function Saller({ navigation }) {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#6366f1" />
           <Text style={styles.loadingText}>Carregando produtos...</Text>
         </View>
       ) : filteredProducts.length === 0 ? (
@@ -372,16 +378,16 @@ export default function Saller({ navigation }) {
           </Text>
         </View>
       ) : (
-        <ScrollView 
-          style={styles.productList} 
+        <ScrollView
+          style={styles.productList}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.productListContent}
         >
           {filteredProducts.map(product => (
-            <TouchableOpacity 
-              key={product.id} 
+            <TouchableOpacity
+              key={product.id}
               style={styles.productCard}
-              onPress={() => openEditModal(product)}
+              onPress={() => navigation.navigate('ProductDetail', { product })}
             >
               {product.image && (
                 <Image source={{ uri: product.image }} style={styles.productImage} />
@@ -398,12 +404,21 @@ export default function Saller({ navigation }) {
                   {product.description}
                 </Text>
               </View>
-              <TouchableOpacity 
-                style={styles.deleteButton}
-                onPress={() => deleteProduct(product.id)}
-              >
-                <Icon name="delete" size={20} color="#ff4444" />
-              </TouchableOpacity>
+
+              <View style={styles.actionButtons}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => openEditModal(product)}
+                >
+                  <Icon name="edit" size={20} color="#6366f1" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => deleteProduct(product.id)}
+                >
+                  <Icon name="delete" size={20} color="#ff4444" />
+                </TouchableOpacity>
+              </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -426,14 +441,14 @@ export default function Saller({ navigation }) {
               <Icon name="close" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
-          
+
           {editingProduct && (
             <ScrollView style={styles.modalBody}>
               <Text style={styles.label}>Nome do Produto *</Text>
               <TextInput
                 style={styles.input}
                 value={editingProduct.name}
-                onChangeText={(text) => setEditingProduct({...editingProduct, name: text})}
+                onChangeText={(text) => setEditingProduct({ ...editingProduct, name: text })}
                 placeholder="Nome do produto"
                 placeholderTextColor="#666"
               />
@@ -447,7 +462,7 @@ export default function Saller({ navigation }) {
                       styles.categoryButton,
                       editingProduct.category === category && styles.categoryButtonActive
                     ]}
-                    onPress={() => setEditingProduct({...editingProduct, category})}
+                    onPress={() => setEditingProduct({ ...editingProduct, category })}
                   >
                     <Text style={[
                       styles.categoryText,
@@ -463,7 +478,7 @@ export default function Saller({ navigation }) {
               <TextInput
                 style={styles.input}
                 value={editingProduct.price.toString()}
-                onChangeText={(text) => setEditingProduct({...editingProduct, price: parseFloat(text) || 0})}
+                onChangeText={(text) => setEditingProduct({ ...editingProduct, price: parseFloat(text) || 0 })}
                 keyboardType="numeric"
                 placeholder="0.00"
                 placeholderTextColor="#666"
@@ -473,7 +488,7 @@ export default function Saller({ navigation }) {
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={editingProduct.description}
-                onChangeText={(text) => setEditingProduct({...editingProduct, description: text})}
+                onChangeText={(text) => setEditingProduct({ ...editingProduct, description: text })}
                 placeholder="Descrição do produto..."
                 placeholderTextColor="#666"
                 multiline
@@ -481,13 +496,13 @@ export default function Saller({ navigation }) {
               />
 
               <View style={styles.modalButtons}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.modalButton, styles.cancelButton]}
                   onPress={() => setEditModalVisible(false)}
                 >
                   <Text style={styles.cancelButtonText}>Cancelar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.modalButton, styles.saveButton]}
                   onPress={handleEditProduct}
                   disabled={saving}
@@ -508,20 +523,23 @@ export default function Saller({ navigation }) {
 
   const AddProduct = () => (
     <ScrollView style={styles.tabContent}>
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#0f0f0f', '#1a1a1a']}
+        style={styles.header}
+      >
         <Text style={styles.title}>Cadastrar Produto</Text>
         <Text style={styles.subtitle}>Preencha os dados do hardware</Text>
-      </View>
+      </LinearGradient>
 
       <View style={styles.form}>
-        <TouchableOpacity 
-          style={styles.imageUpload} 
+        <TouchableOpacity
+          style={styles.imageUpload}
           onPress={pickImage}
           disabled={uploading}
         >
           {uploading ? (
             <View style={styles.uploadPlaceholder}>
-              <ActivityIndicator size="large" color="#007AFF" />
+              <ActivityIndicator size="large" color="#6366f1" />
               <Text style={styles.uploadText}>Enviando para nuvem...</Text>
             </View>
           ) : newProduct.image ? (
@@ -546,7 +564,7 @@ export default function Saller({ navigation }) {
         <TextInput
           style={styles.input}
           value={newProduct.name}
-          onChangeText={(text) => setNewProduct({...newProduct, name: text})}
+          onChangeText={(text) => setNewProduct({ ...newProduct, name: text })}
           placeholder="Ex: RTX 4060 Ti 8GB"
           placeholderTextColor="#666"
         />
@@ -560,7 +578,7 @@ export default function Saller({ navigation }) {
                 styles.categoryButton,
                 newProduct.category === category && styles.categoryButtonActive
               ]}
-              onPress={() => setNewProduct({...newProduct, category})}
+              onPress={() => setNewProduct({ ...newProduct, category })}
             >
               <Text style={[
                 styles.categoryText,
@@ -577,7 +595,7 @@ export default function Saller({ navigation }) {
           <TextInput
             style={styles.input}
             value={newProduct.price}
-            onChangeText={(text) => setNewProduct({...newProduct, price: text})}
+            onChangeText={(text) => setNewProduct({ ...newProduct, price: text })}
             placeholder="0.00"
             placeholderTextColor="#666"
             keyboardType="numeric"
@@ -588,7 +606,7 @@ export default function Saller({ navigation }) {
         <TextInput
           style={[styles.input, styles.textArea]}
           value={newProduct.description}
-          onChangeText={(text) => setNewProduct({...newProduct, description: text})}
+          onChangeText={(text) => setNewProduct({ ...newProduct, description: text })}
           placeholder="Descreva as especificações do produto..."
           placeholderTextColor="#666"
           multiline
@@ -596,11 +614,11 @@ export default function Saller({ navigation }) {
         />
 
         <View style={styles.publishSection}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.publishButton,
               (uploading || saving || !newProduct.imageUrl) && styles.disabledButton
-            ]} 
+            ]}
             onPress={handleAddProduct}
             disabled={uploading || saving || !newProduct.imageUrl}
           >
@@ -616,7 +634,7 @@ export default function Saller({ navigation }) {
               </>
             )}
           </TouchableOpacity>
-          
+
           {!newProduct.imageUrl && (
             <Text style={styles.helperText}>
               Adicione uma imagem para poder publicar
@@ -631,7 +649,7 @@ export default function Saller({ navigation }) {
     <>
       <View style={styles.container}>
         <View style={styles.tabBar}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.tab, activeTab === 'list' && styles.activeTab]}
             onPress={() => setActiveTab('list')}
           >
@@ -641,14 +659,14 @@ export default function Saller({ navigation }) {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.tab, activeTab === 'add' && styles.activeTab]}
             onPress={() => setActiveTab('add')}
           >
-            <Entypo 
-              name="publish" 
-              size={24} 
-              color={activeTab === 'add' ? '#007AFF' : '#666'}
+            <Entypo
+              name="publish"
+              size={24}
+              color={activeTab === 'add' ? '#6366f1' : '#666'}
             />
             <Text style={[styles.tabText, activeTab === 'add' && styles.activeTabText]}>
               Cadastrar
@@ -659,10 +677,10 @@ export default function Saller({ navigation }) {
         <View style={styles.mainContent}>
           {activeTab === 'list' ? <ProductList /> : <AddProduct />}
         </View>
-        
+
         <EditProductModal />
       </View>
-      
+
       <Menu navigation={navigation} />
     </>
   );
@@ -683,12 +701,20 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingBottom: 10,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#6366f1',
+    shadowColor: '#6366f1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginTop: 20,
   },
   headerTitle: {
     flex: 1,
@@ -696,17 +722,17 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f1f5f9',
   },
   subtitle: {
     fontSize: 14,
-    color: '#888',
+    color: '#94a3b8',
     marginTop: 2,
   },
   reloadButton: {
     padding: 8,
-    backgroundColor: '#1e1e1e',
-    borderRadius: 8,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderRadius: 20,
     marginLeft: 10,
   },
   productList: {
@@ -735,20 +761,25 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#007AFF',
+    borderBottomColor: '#6366f1',
   },
   activeTabText: {
-    color: '#007AFF',
+    color: '#6366f1',
     fontWeight: 'bold',
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 15,
-    backgroundColor: '#1e1e1e',
-    borderRadius: 8,
+    backgroundColor: 'rgba(30, 30, 30, 0.8)',
+    borderRadius: 16,
     marginHorizontal: 20,
     marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
   },
   statCard: {
     alignItems: 'center',
@@ -757,12 +788,12 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f1f5f9',
     marginTop: 5,
   },
   statLabel: {
     fontSize: 12,
-    color: '#888',
+    color: '#94a3b8',
     marginTop: 2,
   },
   searchContainer: {
@@ -780,285 +811,44 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    padding: 12,
+    height: 45,
     color: '#fff',
+    fontSize: 16,
+    paddingHorizontal: 10,
   },
   filterSection: {
-    paddingHorizontal: 20,
     marginBottom: 15,
   },
   filterLabel: {
-    color: '#aaa',
+    color: '#94a3b8',
+    marginLeft: 20,
+    marginBottom: 10,
     fontSize: 14,
-    marginBottom: 8,
   },
   filterContainer: {
-    maxHeight: 40,
+    paddingHorizontal: 20,
   },
   filterContent: {
-    paddingRight: 20,
+    paddingRight: 40,
   },
   filterChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#1e1e1e',
     borderRadius: 20,
-    marginRight: 8,
+    marginRight: 10,
     borderWidth: 1,
     borderColor: '#333',
   },
   filterChipActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: '#6366f1',
+    borderColor: '#6366f1',
   },
   filterChipText: {
-    color: '#aaa',
-    fontSize: 12,
-    fontWeight: '500',
+    color: '#94a3b8',
+    fontSize: 14,
   },
   filterChipTextActive: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  productCard: {
-    backgroundColor: '#1e1e1e',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
-  },
-  productImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  productInfo: {
-    flex: 1,
-  },
-  productHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 4,
-  },
-  productName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    flex: 1,
-    marginRight: 8,
-  },
-  productCategory: {
-    color: '#888',
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  productDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  productPrice: {
-    color: '#4CD964',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  productDescription: {
-    color: '#aaa',
-    fontSize: 12,
-  },
-  deleteButton: {
-    padding: 8,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginTop: 50,
-  },
-  emptyText: {
-    color: '#ccc',
-    fontSize: 16,
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    color: '#777',
-    fontSize: 13,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  form: {
-    padding: 20,
-  },
-  label: {
-    color: '#aaa',
-    fontSize: 14,
-    marginBottom: 5,
-  },
-  input: {
-    backgroundColor: '#1e1e1e',
-    borderWidth: 1,
-    borderColor: '#333',
-    borderRadius: 8,
-    padding: 12,
-    color: '#fff',
-    marginBottom: 15,
-  },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  inputGroup: {
-    marginBottom: 15,
-  },
-  categories: {
-    marginBottom: 15,
-  },
-  categoryButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 20,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  categoryButtonActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  categoryText: {
-    color: '#aaa',
-    fontSize: 12,
-  },
-  categoryTextActive: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  imageUpload: {
-    height: 150,
-    backgroundColor: '#1e1e1e',
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#333',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  uploadPlaceholder: {
-    alignItems: 'center',
-  },
-  uploadText: {
-    color: '#666',
-    marginTop: 8,
-  },
-  uploadSubtext: {
-    color: '#888',
-    fontSize: 11,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  uploadedImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 8,
-  },
-  uploadSuccessText: {
-    position: 'absolute',
-    bottom: 10,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    color: '#4CD964',
-    padding: 4,
-    borderRadius: 4,
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  publishSection: {
-    marginTop: 30,
-    alignItems: 'center',
-  },
-  publishButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    paddingHorizontal: 30,
-    borderRadius: 12,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-    minWidth: '80%',
-  },
-  publishButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  disabledButton: {
-    backgroundColor: '#666',
-    opacity: 0.6,
-  },
-  helperText: {
-    color: '#FF9500',
-    fontSize: 12,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 20,
-    backgroundColor: '#007AFF',
-  },
-  modalTitle: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  modalBody: {
-    padding: 20,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    marginTop: 20,
-  },
-  modalButton: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#333',
-    marginRight: 10,
-  },
-  saveButton: {
-    backgroundColor: '#007AFF',
-    marginLeft: 10,
-  },
-  cancelButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  saveButtonText: {
     color: '#fff',
     fontWeight: 'bold',
   },
@@ -1066,11 +856,279 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingTop: 50,
   },
   loadingText: {
-    color: '#ccc',
+    color: '#94a3b8',
     marginTop: 10,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 50,
+  },
+  emptyText: {
+    color: '#f1f5f9',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 20,
+  },
+  emptySubtext: {
+    color: '#94a3b8',
+    marginTop: 10,
+  },
+  productCard: {
+    backgroundColor: 'rgba(30, 30, 30, 0.8)',
+    borderRadius: 16,
+    marginBottom: 15,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  productImage: {
+    width: '100%',
+    height: 150,
+    resizeMode: 'cover',
+  },
+  productInfo: {
+    padding: 15,
+  },
+  productHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 5,
+  },
+  productName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    flex: 1,
+  },
+  productCategory: {
+    fontSize: 12,
+    color: '#6366f1',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+  },
+  productDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  productPrice: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#10b981',
+  },
+  productDescription: {
+    fontSize: 14,
+    color: '#94a3b8',
+    lineHeight: 20,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+    gap: 10,
+  },
+  editButton: {
+    padding: 8,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderRadius: 8,
+  },
+  deleteButton: {
+    padding: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: 8,
+  },
+  form: {
+    padding: 20,
+  },
+  imageUpload: {
+    height: 200,
+    backgroundColor: '#1e1e1e',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#333',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  uploadPlaceholder: {
+    alignItems: 'center',
+  },
+  uploadText: {
+    color: '#f1f5f9',
     fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 10,
+  },
+  uploadSubtext: {
+    color: '#94a3b8',
+    fontSize: 12,
+    marginTop: 5,
+  },
+  uploadedImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  uploadSuccessText: {
+    color: '#10b981',
+    textAlign: 'center',
+    marginTop: 10,
+    fontWeight: 'bold',
+  },
+  label: {
+    color: '#f1f5f9',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    marginTop: 10,
+  },
+  input: {
+    backgroundColor: '#1e1e1e',
+    borderRadius: 12,
+    padding: 15,
+    color: '#f1f5f9',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  categories: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  categoryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#1e1e1e',
+    borderRadius: 12,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  categoryButtonActive: {
+    backgroundColor: '#6366f1',
+    borderColor: '#6366f1',
+  },
+  categoryText: {
+    color: '#94a3b8',
+    fontSize: 14,
+  },
+  categoryTextActive: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  inputGroup: {
+    marginBottom: 10,
+  },
+  publishSection: {
+    marginTop: 30,
+    alignItems: 'center',
+  },
+  publishButton: {
+    backgroundColor: '#6366f1',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    width: '100%',
+    shadowColor: '#6366f1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  disabledButton: {
+    backgroundColor: '#333',
+    opacity: 0.7,
+  },
+  publishButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  helperText: {
+    color: '#ef4444',
+    fontSize: 14,
+    marginTop: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#121212',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: '90%',
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+  },
+  modalBody: {
+    flex: 1,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 15,
+    marginTop: 30,
+    marginBottom: 20,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#333',
+  },
+  saveButton: {
+    backgroundColor: '#6366f1',
+  },
+  cancelButtonText: {
+    color: '#f1f5f9',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

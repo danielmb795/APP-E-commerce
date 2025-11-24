@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://bare-marris-prof-ferretto-8544d847.koyeb.app',
+  baseURL: 'http://10.0.2.2:8765',
 });
 
 export default api;

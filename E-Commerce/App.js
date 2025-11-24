@@ -28,26 +28,26 @@ const AppTheme = {
 
 export default function App() {
   return (
-    <AuthProvider> 
+    <AuthProvider>
       <CartProvider>
         {/* Passando o tema aqui */}
         <NavigationContainer theme={AppTheme}>
-          <StatusBar style="light" backgroundColor="#121212" /> 
-          <Stack.Navigator 
-            initialRouteName="Saller" 
-            screenOptions={{ 
+          <StatusBar style="light" backgroundColor="#121212" />
+          <Stack.Navigator
+            initialRouteName="Login"
+            screenOptions={{
               headerShown: false,
               contentStyle: { backgroundColor: '#121212' } // Reforço extra
             }}
           >
             <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="Home" component={Home}/>
+            <Stack.Screen name="Home" component={Home} />
             <Stack.Screen name="RegisterUser" component={RegisterUser} />
             <Stack.Screen name="Cart" component={CartScreen} />
 
             <Stack.Screen name="DescriptionUser" component={DescriptionUserScreen} />
-            <Stack.Screen name="ProductDetail" component={ProductDetail} /> 
-            <Stack.Screen name="Saller" component={Saller}/>
+            <Stack.Screen name="ProductDetail" component={ProductDetail} />
+            <Stack.Screen name="Saller" component={Saller} />
           </Stack.Navigator>
         </NavigationContainer>
       </CartProvider>

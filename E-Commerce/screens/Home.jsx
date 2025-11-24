@@ -1,6 +1,6 @@
 import React, { useState, useEffect, memo } from 'react';
-import { 
-  View, Text, StyleSheet, FlatList, Image, 
+import {
+  View, Text, StyleSheet, FlatList, Image,
   TouchableOpacity, TextInput, ActivityIndicator,
   Keyboard, Alert
 } from 'react-native';
@@ -8,14 +8,18 @@ import axios from 'axios';
 import Menu from '../components/Menu';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useCart } from '../contexts/CartContext'; 
+import { useCart } from '../contexts/CartContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const usuario = "UserTeste";
 
 const baseUrl = "http://10.0.2.2:8765"
 
 const Topo = memo(({ usuario, query, filterProducts, styles, navigation }) => (
-  <View style={styles.topo}>
+  <LinearGradient
+    colors={['#0f0f0f', '#1a1a1a']}
+    style={styles.topo}
+  >
     <View style={styles.headerRow}>
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#9ca3af" style={styles.searchIcon} />
@@ -25,21 +29,21 @@ const Topo = memo(({ usuario, query, filterProducts, styles, navigation }) => (
           placeholderTextColor="#9ca3af"
           value={query}
           onChangeText={filterProducts}
-          autoFocus={false} 
+          autoFocus={false}
         />
       </View>
-      
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <MaterialIcons name="exit-to-app" style={styles.exit}/>
+
+      <TouchableOpacity style={styles.logoutButton} onPress={() => navigation.navigate('Login')}>
+        <Ionicons name="log-out-outline" size={20} color="#ef4444" />
       </TouchableOpacity>
     </View>
-  </View>
+  </LinearGradient>
 ));
 
-export default function Home({ navigation }) { 
+export default function Home({ navigation }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [produtos, setProdutos] = useState([]); 
+  const [produtos, setProdutos] = useState([]);
   const [masterProdutos, setMasterProdutos] = useState([]);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -49,10 +53,10 @@ export default function Home({ navigation }) {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`${baseUrl}/products/brl`);
-        
+        const response = await axios.get(`${baseUrl}/product/brl`);
+
         const productsData = response.data.content || [];
-        
+
         const formattedProducts = productsData.map(product => ({
           id: product.id,
           title: `${product.brand} ${product.model}`,
@@ -63,9 +67,9 @@ export default function Home({ navigation }) {
           model: product.model,
           currency: product.currency,
           stock: product.stock,
-          originalData: product 
+          originalData: product
         }));
-        
+
         setProdutos(formattedProducts);
         setMasterProdutos(formattedProducts);
       } catch (error) {
@@ -100,7 +104,7 @@ export default function Home({ navigation }) {
       setProdutos(masterProdutos);
     } else {
       const lowerQuery = text.toLowerCase();
-      const filteredData = masterProdutos.filter(item => 
+      const filteredData = masterProdutos.filter(item =>
         item.title.toLowerCase().includes(lowerQuery) ||
         item.brand?.toLowerCase().includes(lowerQuery) ||
         item.model?.toLowerCase().includes(lowerQuery)
@@ -131,18 +135,18 @@ export default function Home({ navigation }) {
 
   const renderItem = ({ item }) => (
     <View style={styles.produtoContainer}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.produto}
         onPress={() => navigation.navigate('ProductDetail', { product: item })}
       >
-        <Image source={{ uri: item.image }} style={styles.imagem} /> 
+        <Image source={{ uri: item.image }} style={styles.imagem} />
         <View style={styles.info}>
-          <Text style={styles.nome} numberOfLines={2}>{item.title}</Text> 
-          <Text style={styles.preco}>R$ {item.price?.toFixed(2)}</Text> 
+          <Text style={styles.nome} numberOfLines={2}>{item.title}</Text>
+          <Text style={styles.preco}>R$ {item.price?.toFixed(2)}</Text>
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.botaoCarrinho}
         onPress={() => adicionarAoCarrinho(item)}
       >
@@ -150,7 +154,7 @@ export default function Home({ navigation }) {
         <Text style={styles.textoBotaoCarrinho}>Adicionar ao Carrinho</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.botaoComprar}
         onPress={() => comprarAgora(item)}
       >
@@ -162,7 +166,7 @@ export default function Home({ navigation }) {
 
   return (
     <>
-      <Topo 
+      <Topo
         usuario={usuario}
         query={query}
         filterProducts={filterProducts}
@@ -189,8 +193,8 @@ export default function Home({ navigation }) {
             }
           />
         )}
-        
-        {!isKeyboardVisible && <Menu navigation={navigation} />} 
+
+        {!isKeyboardVisible && <Menu navigation={navigation} />}
       </View>
     </>
   );
@@ -201,18 +205,22 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#121212',
     zIndex: 10,
-    paddingTop: 30,
-    paddingBottom: 10,
+    paddingTop: 40,
+    paddingBottom: 20,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
-    height: 100, 
+    borderBottomColor: '#6366f1',
+    height: 120,
+    shadowColor: '#6366f1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
   },
   headerRow: {
-    flexDirection: 'row',     
-    alignItems: 'center',          
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
   },
@@ -226,9 +234,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flex: 1,
   },
-  exit: {
-    color: "#6366f1",
-    fontSize: 40,
+  logoutButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -238,8 +247,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#374151',
     height: 45,
-    flex: 1, 
-    marginRight: 15, 
+    flex: 1,
+    marginRight: 15,
   },
   searchIcon: {
     paddingLeft: 15,
@@ -256,7 +265,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
   },
   lista: {
-    paddingTop: 110, 
+    paddingTop: 130,
     paddingBottom: 100,
   },
   produtoContainer: {
@@ -266,8 +275,8 @@ const styles = StyleSheet.create({
   },
   produto: {
     flexDirection: 'row',
-    backgroundColor: '#1e1e1e',
-    borderRadius: 10,
+    backgroundColor: 'rgba(30, 30, 30, 0.8)',
+    borderRadius: 16,
     alignItems: 'center',
     padding: 10,
     height: 120,

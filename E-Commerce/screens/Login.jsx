@@ -8,7 +8,7 @@ export default function Login({ navigation }) {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  
+
   const { signIn } = useAuth();
 
   const handleLogin = async () => {
@@ -40,10 +40,10 @@ export default function Login({ navigation }) {
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Ionicons 
-              name="person-outline" 
-              size={20} 
-              color="#6b7280" 
+            <Ionicons
+              name="person-outline"
+              size={20}
+              color="#6b7280"
               style={styles.inputIcon}
             />
             <TextInput
@@ -53,15 +53,15 @@ export default function Login({ navigation }) {
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
-              keyboardType="email-address" 
+              keyboardType="email-address"
             />
           </View>
 
           <View style={styles.inputContainer}>
-            <Ionicons 
-              name="lock-closed-outline" 
-              size={20} 
-              color="#6b7280" 
+            <Ionicons
+              name="lock-closed-outline"
+              size={20}
+              color="#6b7280"
               style={styles.inputIcon}
             />
             <TextInput
@@ -71,30 +71,30 @@ export default function Login({ navigation }) {
               value={password}
               onChangeText={setPassword}
               autoCapitalize="none"
-              secureTextEntry={!isPasswordVisible} 
+              secureTextEntry={!isPasswordVisible}
             />
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.eyeIcon}
               onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             >
-              <Ionicons 
+              <Ionicons
                 name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
-                size={20} 
-                color="#6b7280" 
+                size={20}
+                color="#6b7280"
               />
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.botao}
             onPress={handleLogin}
             disabled={isLoading}
           >
             {isLoading ? (
-                <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#fff" />
             ) : (
-                <Text style={styles.textoBotao}>Entrar</Text>
+              <Text style={styles.textoBotao}>Entrar</Text>
             )}
           </TouchableOpacity>
 
@@ -109,7 +109,7 @@ export default function Login({ navigation }) {
               <Ionicons name="logo-google" size={20} color="#db4437" />
               <Text style={styles.socialText}>Google</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.socialButton}>
               <Ionicons name="logo-facebook" size={20} color="#1877f2" />
               <Text style={styles.socialText}>Facebook</Text>
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   loginBox: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: 'rgba(30, 30, 30, 0.8)',
     width: '100%',
     maxWidth: 400,
     borderRadius: 20,

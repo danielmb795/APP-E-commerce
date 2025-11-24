@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView, 
-  Alert, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
   ActivityIndicator,
-  KeyboardAvoidingView, 
-  Platform 
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -18,7 +18,7 @@ import api from '../services/api';
 export default function RegisterUser() {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
-  
+
 
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -47,8 +47,8 @@ export default function RegisterUser() {
     }
 
     if (!formData.name || !formData.email || !formData.password) {
-        Alert.alert('Erro', 'Preencha os campos obrigatórios.');
-        return;
+      Alert.alert('Erro', 'Preencha os campos obrigatórios.');
+      return;
     }
 
     setLoading(true);
@@ -56,7 +56,9 @@ export default function RegisterUser() {
       await api.post('/auth/signup', {
         name: formData.name,
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        phoneNumber: formData.phone,
+        address: formData.address
       });
 
       Alert.alert('Sucesso', 'Conta criada com sucesso!', [
@@ -71,12 +73,12 @@ export default function RegisterUser() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1, backgroundColor: '#121212' }} 
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: '#121212' }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -85,7 +87,7 @@ export default function RegisterUser() {
       >
         <View style={styles.container}>
           <View style={styles.cadastroBox}>
-            
+
             <View style={styles.header}>
               <Ionicons name="person-add" size={40} color="#6366f1" />
               <Text style={styles.title}>Criar Conta</Text>
@@ -93,7 +95,7 @@ export default function RegisterUser() {
             </View>
 
             <View style={styles.form}>
-              
+
               <View style={styles.inputContainer}>
                 <Ionicons name="person-outline" size={20} color="#6b7280" style={styles.inputIcon} />
                 <TextInput
@@ -167,14 +169,14 @@ export default function RegisterUser() {
               </View>
 
               <View style={styles.termosContainer}>
-                <TouchableOpacity 
-                  style={styles.checkbox} 
+                <TouchableOpacity
+                  style={styles.checkbox}
                   onPress={() => setTermsAccepted(!termsAccepted)}
                 >
-                  <Ionicons 
-                    name={termsAccepted ? "checkbox" : "square-outline"} 
-                    size={24} 
-                    color={termsAccepted ? "#6366f1" : "#6b7280"} 
+                  <Ionicons
+                    name={termsAccepted ? "checkbox" : "square-outline"}
+                    size={24}
+                    color={termsAccepted ? "#6366f1" : "#6b7280"}
                   />
                 </TouchableOpacity>
                 <Text style={styles.termosText}>
@@ -182,10 +184,10 @@ export default function RegisterUser() {
                 </Text>
               </View>
 
-              <TouchableOpacity 
-                  style={[styles.botao, !termsAccepted && { opacity: 0.5 }]} 
-                  onPress={handleRegister}
-                  disabled={loading}
+              <TouchableOpacity
+                style={[styles.botao, !termsAccepted && { opacity: 0.5 }]}
+                onPress={handleRegister}
+                disabled={loading}
               >
                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotao}>Cadastrar</Text>}
               </TouchableOpacity>
@@ -222,7 +224,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingVertical: 20, 
+    paddingVertical: 20,
   },
   container: {
     width: '100%',
@@ -231,7 +233,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   cadastroBox: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: 'rgba(30, 30, 30, 0.8)',
     width: '100%',
     maxWidth: 400,
     borderRadius: 20,
@@ -288,7 +290,7 @@ const styles = StyleSheet.create({
   },
   termosContainer: {
     flexDirection: 'row',
-    alignItems: 'center', 
+    alignItems: 'center',
     marginBottom: 25,
     marginTop: 10,
   },

@@ -5,19 +5,20 @@ import {
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useCart } from '../contexts/CartContext'; 
+import { useCart } from '../contexts/CartContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ProductDetail() {
   const route = useRoute();
   const navigation = useNavigation();
   const { product } = route.params;
   const [loading, setLoading] = useState(false);
-  
+
   const { adicionarAoCarrinho } = useCart();
 
   const handleBuy = () => {
     setLoading(true);
-    
+
     setTimeout(() => {
       setLoading(false);
       Alert.alert(
@@ -40,8 +41,8 @@ export default function ProductDetail() {
   };
 
   const handleAddToCart = () => {
-    adicionarAoCarrinho(product); 
-    
+    adicionarAoCarrinho(product);
+
     Alert.alert(
       '🛒 Produto adicionado!',
       `${product.title} foi adicionado ao carrinho`,
@@ -60,28 +61,31 @@ export default function ProductDetail() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
+      <LinearGradient
+        colors={['#0f0f0f', '#1a1a1a']}
+        style={styles.header}
+      >
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={24} color="#6366f1" />
         </TouchableOpacity>
-        
+
         <Text style={styles.headerTitle}>Detalhes</Text>
-        
+
         <TouchableOpacity style={styles.iconButton}>
           <Ionicons name="heart-outline" size={24} color="#6366f1" />
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.imageContainer}>
-          <Image 
-            source={{ uri: product.image }} 
+          <Image
+            source={{ uri: product.image }}
             style={styles.productImage}
             resizeMode="contain"
           />
@@ -97,7 +101,7 @@ export default function ProductDetail() {
           <View style={styles.categoryContainer}>
             <Text style={styles.categoryLabel}>Categoria:</Text>
             <Text style={styles.categoryText}>
-              {typeof product.category === 'string' 
+              {typeof product.category === 'string'
                 ? product.category.charAt(0).toUpperCase() + product.category.slice(1)
                 : 'Eletrônicos'
               }
@@ -114,7 +118,7 @@ export default function ProductDetail() {
 
         <View style={styles.specsContainer}>
           <Text style={styles.sectionTitle}>Vantagens</Text>
-          
+
           <View style={styles.specItem}>
             <MaterialIcons name="local-shipping" size={20} color="#6366f1" />
             <View style={styles.specTextContainer}>
@@ -122,7 +126,7 @@ export default function ProductDetail() {
               <Text style={styles.specDescription}>Para todo o Brasil</Text>
             </View>
           </View>
-          
+
           <View style={styles.specItem}>
             <MaterialIcons name="assignment-return" size={20} color="#6366f1" />
             <View style={styles.specTextContainer}>
@@ -130,7 +134,7 @@ export default function ProductDetail() {
               <Text style={styles.specDescription}>Em até 30 dias</Text>
             </View>
           </View>
-          
+
           <View style={styles.specItem}>
             <MaterialIcons name="security" size={20} color="#6366f1" />
             <View style={styles.specTextContainer}>
@@ -144,7 +148,7 @@ export default function ProductDetail() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.addToCartButton}
           onPress={handleAddToCart}
           disabled={loading}
@@ -152,8 +156,8 @@ export default function ProductDetail() {
           <Ionicons name="cart" size={20} color="#6366f1" />
           <Text style={styles.addToCartText}>Adicionar</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.buyButton, loading && styles.buyButtonDisabled]}
           onPress={handleBuy}
           disabled={loading}
@@ -181,15 +185,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
-    backgroundColor: '#121212',
+    borderBottomColor: '#6366f1',
     marginTop: 30, // Ajuste para ficar abaixo da status bar
+    shadowColor: '#6366f1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
   },
   backButton: {
     padding: 8,
   },
   headerTitle: {
-    color: '#6366f1',
+    color: '#f1f5f9',
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -202,12 +210,17 @@ const styles = StyleSheet.create({
   imageContainer: {
     alignItems: 'center',
     paddingVertical: 25,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: 'rgba(30, 30, 30, 0.8)',
     marginHorizontal: 15,
     marginTop: 15,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
   },
   productImage: {
     width: 280,
@@ -215,17 +228,22 @@ const styles = StyleSheet.create({
   },
   productInfo: {
     padding: 20,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: 'rgba(30, 30, 30, 0.8)',
     marginHorizontal: 15,
     marginTop: 15,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
   },
   productTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f1f5f9',
     marginBottom: 12,
     lineHeight: 24,
   },
@@ -251,32 +269,42 @@ const styles = StyleSheet.create({
   },
   descriptionContainer: {
     padding: 20,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: 'rgba(30, 30, 30, 0.8)',
     marginHorizontal: 15,
     marginTop: 15,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f1f5f9',
     marginBottom: 12,
   },
   productDescription: {
     fontSize: 15,
-    color: '#d1d5db',
+    color: '#9ca3af',
     lineHeight: 22,
   },
   specsContainer: {
     padding: 20,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: 'rgba(30, 30, 30, 0.8)',
     marginHorizontal: 15,
     marginTop: 15,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
   },
   specItem: {
     flexDirection: 'row',
@@ -288,7 +316,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   specTitle: {
-    color: '#fff',
+    color: '#f1f5f9',
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 2,
@@ -307,10 +335,15 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     padding: 16,
-    backgroundColor: '#121212',
+    backgroundColor: 'rgba(30, 30, 30, 0.95)',
     borderTopWidth: 1,
     borderTopColor: '#333',
     paddingBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
   },
   addToCartButton: {
     flex: 1,

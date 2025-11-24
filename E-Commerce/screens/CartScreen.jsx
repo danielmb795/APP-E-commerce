@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCart } from '../contexts/CartContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function CartScreen({ navigation }) {
   const { carrinho, removerDoCarrinho } = useCart();
@@ -20,8 +21,8 @@ export default function CartScreen({ navigation }) {
         </View>
       </View>
 
-      <TouchableOpacity 
-        style={styles.botaoLixeira} 
+      <TouchableOpacity
+        style={styles.botaoLixeira}
         onPress={() => removerDoCarrinho(item.id)}
       >
         <Ionicons name="trash-outline" size={24} color="#db4437" />
@@ -31,10 +32,13 @@ export default function CartScreen({ navigation }) {
 
   return (
     <>
-      <View style={styles.topo}>
+      <LinearGradient
+        colors={['#0f0f0f', '#1a1a1a']}
+        style={styles.topo}
+      >
         <View style={styles.alinhamento}>
-          <TouchableOpacity 
-            style={styles.botaoVoltar} 
+          <TouchableOpacity
+            style={styles.botaoVoltar}
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="arrow-back" size={30} color="#6366f1" />
@@ -45,9 +49,9 @@ export default function CartScreen({ navigation }) {
             <Text style={styles.titulo}>Meu Carrinho</Text>
           </View>
 
-          <View style={styles.botaoVoltar} /> 
+          <View style={styles.botaoVoltar} />
         </View>
-      </View>
+      </LinearGradient>
 
       <View style={styles.container}>
         <FlatList
@@ -61,7 +65,7 @@ export default function CartScreen({ navigation }) {
               <Ionicons name="cart-outline" size={50} color="#333" />
               <Text style={styles.carrinhoVazioTexto}>Seu carrinho está vazio.</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Home')}>
-                 <Text style={{color: '#6366f1', marginTop: 10}}>Ir às compras</Text>
+                <Text style={{ color: '#6366f1', marginTop: 10 }}>Ir às compras</Text>
               </TouchableOpacity>
             </View>
           }
@@ -86,13 +90,17 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 90,
-    backgroundColor: '#121212',
+    height: 100,
     justifyContent: 'center',
     zIndex: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: '#6366f1',
     paddingTop: 30,
+    shadowColor: '#6366f1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
   },
   alinhamento: {
     flexDirection: 'row',
@@ -123,21 +131,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
   },
   lista: {
-    paddingTop: 100,
+    paddingTop: 110,
     paddingBottom: 150,
   },
   produtoItem: {
     flexDirection: 'row',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: 'rgba(30, 30, 30, 0.8)',
     width: '92%',
     marginLeft: '4%',
     marginBottom: 15,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
     padding: 15,
     height: 120,
     borderWidth: 1,
     borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
   },
   imagem: {
     width: 80,
@@ -196,12 +209,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: 'rgba(30, 30, 30, 0.95)',
     padding: 20,
     paddingBottom: 30,
     borderTopWidth: 1,
     borderColor: '#333',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
   },
   resumoTexto: {
     color: '#fff',
