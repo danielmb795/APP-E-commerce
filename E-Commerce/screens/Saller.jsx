@@ -35,7 +35,7 @@ export default function Saller({ navigation }) {
 
   const categories = ['Processador', 'Placa de Vídeo', 'Memória RAM', 'SSD', 'Placa-Mãe', 'Fonte', 'Gabinete', 'Cooler', 'Monitor'];
 
-
+  // Carregar produtos da API
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -67,31 +67,6 @@ export default function Saller({ navigation }) {
         
         console.log('Produtos adaptados:', adaptedProducts);
         setProducts(adaptedProducts);
-      } else if (response.data && typeof response.data === 'object') {
-        console.log('Response.data é um objeto, tentando encontrar array...');
-        
-        const possibleArrays = Object.values(response.data).find(item => Array.isArray(item));
-        
-        if (possibleArrays && Array.isArray(possibleArrays)) {
-          const adaptedProducts = possibleArrays.map(product => ({
-            id: product.id?.toString() || Math.random().toString(),
-            name: product.model || product.description || 'Produto sem nome',
-            category: product.brand || product.category || 'Hardware',
-            price: product.price || 0,
-            stock: product.stock || 0,
-            description: product.description || '',
-            image: product.imageUrl,
-            imageUrl: product.imageUrl,
-            date: product.createdAt || new Date().toLocaleDateString(),
-            sales: product.sales || 0
-          }));
-          
-          console.log('Produtos encontrados em objeto:', adaptedProducts);
-          setProducts(adaptedProducts);
-        } else {
-          console.log('Nenhum array encontrado no response.data');
-          setProducts([]);
-        }
       } else {
         console.log('Response.data não é um array:', response.data);
         setProducts([]);
@@ -194,8 +169,10 @@ export default function Saller({ navigation }) {
       if (response.status === 200 || response.status === 201) {
         Alert.alert('Sucesso', 'Produto cadastrado na API!');
         
+        // Recarrega a lista de produtos
         await fetchProducts();
         
+        // Limpa o formulário
         setNewProduct({ 
           name: '', 
           category: '', 
@@ -247,6 +224,7 @@ export default function Saller({ navigation }) {
       if (response.status === 200 || response.status === 204) {
         Alert.alert('Sucesso', 'Produto atualizado na API!');
         
+        // Recarrega a lista de produtos
         await fetchProducts();
         
         setEditModalVisible(false);
@@ -279,6 +257,7 @@ export default function Saller({ navigation }) {
               
               if (response.status === 200 || response.status === 204) {
                 Alert.alert('Sucesso', 'Produto excluído da API!');
+                // Recarrega a lista de produtos
                 await fetchProducts();
               } else {
                 throw new Error('Erro na resposta da API');
@@ -321,17 +300,22 @@ export default function Saller({ navigation }) {
 
   const ProductList = () => (
     <View style={styles.tabContent}>
+      {/* HEADER COM BOTÃO NA MESMA LINHA */}
       <View style={styles.header}>
-        <Text style={styles.title}>Meus Produtos</Text>
-        <Text style={styles.subtitle}>{products.length} produtos cadastrados</Text>
-        
-        <TouchableOpacity 
-          style={styles.reloadButton}
-          onPress={fetchProducts}
-        >
-          <Icon name="refresh" size={20} color="#007AFF" />
-          <Text style={styles.reloadText}>Recarregar</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRow}>
+          <View style={styles.headerTitle}>
+            <Text style={styles.title}>Meus Produtos</Text>
+            <Text style={styles.subtitle}>{products.length} produtos cadastrados</Text>
+          </View>
+          
+          {/* Botão recarregar compacto */}
+          <TouchableOpacity 
+            style={styles.reloadButton}
+            onPress={fetchProducts}
+          >
+            <Icon name="refresh" size={20} color="#007AFF" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <StatsOverview />
@@ -400,7 +384,11 @@ export default function Saller({ navigation }) {
           </Text>
         </View>
       ) : (
-        <ScrollView style={styles.productList} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.productList} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.productListContent}
+        >
           {filteredProducts.map(product => (
             <TouchableOpacity 
               key={product.id} 
@@ -691,30 +679,47 @@ export default function Saller({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {activeTab === 'list' ? <ProductList /> : <AddProduct />}
+        {/* CONTEÚDO PRINCIPAL COM ESPAÇO PARA O MENU */}
+        <View style={styles.mainContent}>
+          {activeTab === 'list' ? <ProductList /> : <AddProduct />}
+        </View>
         
         <EditProductModal />
       </View>
+      
+      {/* MENU NO FINAL */}
       <Menu navigation={navigation} />
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  // ======== CONTAINERS ========
+  // ======== LAYOUT PRINCIPAL ========
   container: {
     flex: 1,
     backgroundColor: '#121212',
     marginTop: 18
   },
+  mainContent: {
+    flex: 1,
+    paddingBottom: 80, // ESPAÇO PARA O MENU
+  },
   tabContent: {
     flex: 1,
   },
 
-  // ======== TÍTULOS / CABEÇALHOS ========
+  // ======== HEADER COM BOTÃO NA MESMA LINHA ========
   header: {
     padding: 20,
     paddingBottom: 10,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerTitle: {
+    flex: 1,
   },
   title: {
     fontSize: 22,
@@ -725,6 +730,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#888',
     marginTop: 2,
+  },
+
+  // ======== BOTÃO RECARREGAR COMPACTO ========
+  reloadButton: {
+    padding: 8,
+    backgroundColor: '#1e1e1e',
+    borderRadius: 8,
+    marginLeft: 10,
+  },
+
+  // ======== LISTA COM ESPAÇO PARA O MENU ========
+  productList: {
+    paddingHorizontal: 20,
+  },
+  productListContent: {
+    paddingBottom: 30, // Espaço extra na parte inferior da lista
   },
 
   // ======== TAB BAR ========
@@ -841,9 +862,6 @@ const styles = StyleSheet.create({
   },
 
   // ======== LISTA DE PRODUTOS ========
-  productList: {
-    paddingHorizontal: 20,
-  },
   productCard: {
     backgroundColor: '#1e1e1e',
     padding: 15,
@@ -1121,22 +1139,5 @@ const styles = StyleSheet.create({
     color: '#ccc',
     marginTop: 10,
     fontSize: 16,
-  },
-
-  // ======== RELOAD BUTTON ========
-  reloadButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-end',
-    marginTop: 10,
-    padding: 8,
-    backgroundColor: '#1e1e1e',
-    borderRadius: 8,
-    gap: 6,
-  },
-  reloadText: {
-    color: '#007AFF',
-    fontSize: 12,
-    fontWeight: '600',
   },
 });
