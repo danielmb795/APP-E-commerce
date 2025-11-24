@@ -49,7 +49,7 @@ export default function Home({ navigation }) {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`${baseUrl}/product/brl`);
+        const response = await axios.get(`${baseUrl}/products/brl`);
         
         const productsData = response.data.content || [];
         

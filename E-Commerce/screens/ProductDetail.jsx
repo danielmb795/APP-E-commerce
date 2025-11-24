@@ -5,7 +5,7 @@ import {
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useCart } from '../contexts/CartContext'; // Importar contexto
+import { useCart } from '../contexts/CartContext'; 
 
 export default function ProductDetail() {
   const route = useRoute();
@@ -13,7 +13,7 @@ export default function ProductDetail() {
   const { product } = route.params;
   const [loading, setLoading] = useState(false);
   
-  const { adicionarAoCarrinho } = useCart(); // Usar função do contexto
+  const { adicionarAoCarrinho } = useCart();
 
   const handleBuy = () => {
     setLoading(true);
@@ -35,13 +35,12 @@ export default function ProductDetail() {
           }
         ]
       );
-      // Opcional: Adicionar ao carrinho antes de comprar
       adicionarAoCarrinho(product);
     }, 1500);
   };
 
   const handleAddToCart = () => {
-    adicionarAoCarrinho(product); // Adiciona de verdade no contexto
+    adicionarAoCarrinho(product); 
     
     Alert.alert(
       '🛒 Produto adicionado!',

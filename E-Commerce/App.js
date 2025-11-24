@@ -34,7 +34,7 @@ export default function App() {
         <NavigationContainer theme={AppTheme}>
           <StatusBar style="light" backgroundColor="#121212" /> 
           <Stack.Navigator 
-            initialRouteName="Login" 
+            initialRouteName="Saller" 
             screenOptions={{ 
               headerShown: false,
               contentStyle: { backgroundColor: '#121212' } // Reforço extra

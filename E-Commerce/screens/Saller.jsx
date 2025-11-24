@@ -27,7 +27,6 @@ export default function Saller({ navigation }) {
     name: '',
     category: '',
     price: '',
-    stock: '',
     description: '',
     image: null,
     imageUrl: null
@@ -35,7 +34,7 @@ export default function Saller({ navigation }) {
 
   const categories = ['Processador', 'Placa de Vídeo', 'Memória RAM', 'SSD', 'Placa-Mãe', 'Fonte', 'Gabinete', 'Cooler', 'Monitor'];
 
-  // Carregar produtos da API
+
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -55,14 +54,12 @@ export default function Saller({ navigation }) {
         const adaptedProducts = response.data.map(product => ({
           id: product.id?.toString() || Math.random().toString(),
           name: product.model || product.description || 'Produto sem nome',
-          category: product.brand || product.category || 'Hardware',
+          category: product.type || product.brand || 'Hardware',
           price: product.price || 0,
-          stock: product.stock || 0,
           description: product.description || '',
-          image: product.imageUrl,
-          imageUrl: product.imageUrl,
+          image: product.imageurl,
+          imageUrl: product.imageurl,
           date: product.createdAt || new Date().toLocaleDateString(),
-          sales: product.sales || 0
         }));
         
         console.log('Produtos adaptados:', adaptedProducts);
@@ -83,8 +80,8 @@ export default function Saller({ navigation }) {
 
   useEffect(() => {
     const totalProducts = products.length;
-    const lowStock = products.filter(p => p.stock < 5).length;
-    const totalValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
+    const lowStock = 0;
+    const totalValue = products.reduce((sum, p) => sum + (p.price || 0), 0);
     
     setStats({ totalProducts, lowStock, totalValue });
   }, [products]);
@@ -137,7 +134,7 @@ export default function Saller({ navigation }) {
   };
 
   const handleAddProduct = async () => {
-    if (!newProduct.name || !newProduct.price || !newProduct.stock) {
+    if (!newProduct.name || !newProduct.price) {
       Alert.alert('Erro', 'Preencha os campos obrigatórios');
       return;
     }
@@ -154,11 +151,10 @@ export default function Saller({ navigation }) {
         description: newProduct.description || `${newProduct.name} - ${newProduct.category}`,
         brand: newProduct.category || 'Hardware',
         model: newProduct.name,
-        currency: 'BRL',
+        currency: 'USD',
         price: parseFloat(newProduct.price),
-        imageUrl: newProduct.imageUrl,
-        category: newProduct.category,
-        stock: parseInt(newProduct.stock)
+        imageurl: newProduct.imageUrl,
+        type: newProduct.category || 'Hardware'
       };
 
       console.log('Enviando para API:', productData);
@@ -169,15 +165,12 @@ export default function Saller({ navigation }) {
       if (response.status === 200 || response.status === 201) {
         Alert.alert('Sucesso', 'Produto cadastrado na API!');
         
-        // Recarrega a lista de produtos
         await fetchProducts();
         
-        // Limpa o formulário
         setNewProduct({ 
           name: '', 
           category: '', 
           price: '', 
-          stock: '', 
           description: '', 
           image: null,
           imageUrl: null 
@@ -197,7 +190,7 @@ export default function Saller({ navigation }) {
   };
 
   const handleEditProduct = async () => {
-    if (!editingProduct.name || !editingProduct.price || !editingProduct.stock) {
+    if (!editingProduct.name || !editingProduct.price) {
       Alert.alert('Erro', 'Preencha os campos obrigatórios');
       return;
     }
@@ -209,11 +202,10 @@ export default function Saller({ navigation }) {
         description: editingProduct.description || `${editingProduct.name} - ${editingProduct.category}`,
         brand: editingProduct.category || 'Hardware',
         model: editingProduct.name,
-        currency: 'BRL',
+        currency: 'USD',
         price: parseFloat(editingProduct.price),
-        imageUrl: editingProduct.imageUrl,
-        category: editingProduct.category,
-        stock: parseInt(editingProduct.stock)
+        imageurl: editingProduct.imageUrl,
+        type: editingProduct.category || 'Hardware'
       };
 
       console.log('Atualizando produto:', productData);
@@ -224,7 +216,6 @@ export default function Saller({ navigation }) {
       if (response.status === 200 || response.status === 204) {
         Alert.alert('Sucesso', 'Produto atualizado na API!');
         
-        // Recarrega a lista de produtos
         await fetchProducts();
         
         setEditModalVisible(false);
@@ -257,7 +248,6 @@ export default function Saller({ navigation }) {
               
               if (response.status === 200 || response.status === 204) {
                 Alert.alert('Sucesso', 'Produto excluído da API!');
-                // Recarrega a lista de produtos
                 await fetchProducts();
               } else {
                 throw new Error('Erro na resposta da API');
@@ -300,7 +290,6 @@ export default function Saller({ navigation }) {
 
   const ProductList = () => (
     <View style={styles.tabContent}>
-      {/* HEADER COM BOTÃO NA MESMA LINHA */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.headerTitle}>
@@ -308,7 +297,6 @@ export default function Saller({ navigation }) {
             <Text style={styles.subtitle}>{products.length} produtos cadastrados</Text>
           </View>
           
-          {/* Botão recarregar compacto */}
           <TouchableOpacity 
             style={styles.reloadButton}
             onPress={fetchProducts}
@@ -401,23 +389,14 @@ export default function Saller({ navigation }) {
               <View style={styles.productInfo}>
                 <View style={styles.productHeader}>
                   <Text style={styles.productName}>{product.name}</Text>
-                  {product.stock < 5 && (
-                    <View style={styles.lowStockBadge}>
-                      <Text style={styles.lowStockText}>Estoque Baixo</Text>
-                    </View>
-                  )}
                 </View>
                 <Text style={styles.productCategory}>{product.category}</Text>
                 <View style={styles.productDetails}>
                   <Text style={styles.productPrice}>R$ {product.price.toFixed(2)}</Text>
-                  <Text style={[
-                    styles.productStock,
-                    product.stock < 5 && styles.lowStockText
-                  ]}>
-                    Estoque: {product.stock}
-                  </Text>
                 </View>
-                <Text style={styles.productSales}>Vendas: {product.sales}</Text>
+                <Text style={styles.productDescription} numberOfLines={2}>
+                  {product.description}
+                </Text>
               </View>
               <TouchableOpacity 
                 style={styles.deleteButton}
@@ -456,6 +435,7 @@ export default function Saller({ navigation }) {
                 value={editingProduct.name}
                 onChangeText={(text) => setEditingProduct({...editingProduct, name: text})}
                 placeholder="Nome do produto"
+                placeholderTextColor="#666"
               />
 
               <Text style={styles.label}>Categoria</Text>
@@ -486,15 +466,7 @@ export default function Saller({ navigation }) {
                 onChangeText={(text) => setEditingProduct({...editingProduct, price: parseFloat(text) || 0})}
                 keyboardType="numeric"
                 placeholder="0.00"
-              />
-
-              <Text style={styles.label}>Estoque *</Text>
-              <TextInput
-                style={styles.input}
-                value={editingProduct.stock.toString()}
-                onChangeText={(text) => setEditingProduct({...editingProduct, stock: parseInt(text) || 0})}
-                keyboardType="numeric"
-                placeholder="0"
+                placeholderTextColor="#666"
               />
 
               <Text style={styles.label}>Descrição</Text>
@@ -503,6 +475,7 @@ export default function Saller({ navigation }) {
                 value={editingProduct.description}
                 onChangeText={(text) => setEditingProduct({...editingProduct, description: text})}
                 placeholder="Descrição do produto..."
+                placeholderTextColor="#666"
                 multiline
                 numberOfLines={3}
               />
@@ -575,6 +548,7 @@ export default function Saller({ navigation }) {
           value={newProduct.name}
           onChangeText={(text) => setNewProduct({...newProduct, name: text})}
           placeholder="Ex: RTX 4060 Ti 8GB"
+          placeholderTextColor="#666"
         />
 
         <Text style={styles.label}>Categoria</Text>
@@ -598,27 +572,16 @@ export default function Saller({ navigation }) {
           ))}
         </ScrollView>
 
-        <View style={styles.row}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Preço (R$) *</Text>
-            <TextInput
-              style={styles.input}
-              value={newProduct.price}
-              onChangeText={(text) => setNewProduct({...newProduct, price: text})}
-              placeholder="0.00"
-              keyboardType="numeric"
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Estoque *</Text>
-            <TextInput
-              style={styles.input}
-              value={newProduct.stock}
-              onChangeText={(text) => setNewProduct({...newProduct, stock: text})}
-              placeholder="0"
-              keyboardType="numeric"
-            />
-          </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Preço (R$) *</Text>
+          <TextInput
+            style={styles.input}
+            value={newProduct.price}
+            onChangeText={(text) => setNewProduct({...newProduct, price: text})}
+            placeholder="0.00"
+            placeholderTextColor="#666"
+            keyboardType="numeric"
+          />
         </View>
 
         <Text style={styles.label}>Descrição</Text>
@@ -627,29 +590,39 @@ export default function Saller({ navigation }) {
           value={newProduct.description}
           onChangeText={(text) => setNewProduct({...newProduct, description: text})}
           placeholder="Descreva as especificações do produto..."
+          placeholderTextColor="#666"
           multiline
           numberOfLines={3}
         />
 
-        <TouchableOpacity 
-          style={[
-            styles.addButton, 
-            (uploading || saving || !newProduct.imageUrl) && styles.disabledButton
-          ]} 
-          onPress={handleAddProduct}
-          disabled={uploading || saving || !newProduct.imageUrl}
-        >
-          {saving ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Icon name="add" size={20} color="#fff" />
-              <Text style={styles.addButtonText}>
-                {newProduct.imageUrl ? 'Cadastrar Produto' : 'Adicione uma imagem'}
-              </Text>
-            </>
+        <View style={styles.publishSection}>
+          <TouchableOpacity 
+            style={[
+              styles.publishButton,
+              (uploading || saving || !newProduct.imageUrl) && styles.disabledButton
+            ]} 
+            onPress={handleAddProduct}
+            disabled={uploading || saving || !newProduct.imageUrl}
+          >
+            {saving ? (
+              <>
+                <ActivityIndicator size="small" color="#fff" />
+                <Text style={styles.publishButtonText}>Publicando...</Text>
+              </>
+            ) : (
+              <>
+                <Entypo name="publish" size={24} color="#fff" />
+                <Text style={styles.publishButtonText}>PUBLICAR PRODUTO</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          
+          {!newProduct.imageUrl && (
+            <Text style={styles.helperText}>
+              Adicione uma imagem para poder publicar
+            </Text>
           )}
-        </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
@@ -672,14 +645,17 @@ export default function Saller({ navigation }) {
             style={[styles.tab, activeTab === 'add' && styles.activeTab]}
             onPress={() => setActiveTab('add')}
           >
-            <Entypo name="publish" size={24} color="black" />
+            <Entypo 
+              name="publish" 
+              size={24} 
+              color={activeTab === 'add' ? '#007AFF' : '#666'}
+            />
             <Text style={[styles.tabText, activeTab === 'add' && styles.activeTabText]}>
               Cadastrar
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* CONTEÚDO PRINCIPAL COM ESPAÇO PARA O MENU */}
         <View style={styles.mainContent}>
           {activeTab === 'list' ? <ProductList /> : <AddProduct />}
         </View>
@@ -687,14 +663,12 @@ export default function Saller({ navigation }) {
         <EditProductModal />
       </View>
       
-      {/* MENU NO FINAL */}
       <Menu navigation={navigation} />
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  // ======== LAYOUT PRINCIPAL ========
   container: {
     flex: 1,
     backgroundColor: '#121212',
@@ -702,13 +676,11 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
-    paddingBottom: 80, // ESPAÇO PARA O MENU
+    paddingBottom: 80,
   },
   tabContent: {
     flex: 1,
   },
-
-  // ======== HEADER COM BOTÃO NA MESMA LINHA ========
   header: {
     padding: 20,
     paddingBottom: 10,
@@ -731,24 +703,18 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 2,
   },
-
-  // ======== BOTÃO RECARREGAR COMPACTO ========
   reloadButton: {
     padding: 8,
     backgroundColor: '#1e1e1e',
     borderRadius: 8,
     marginLeft: 10,
   },
-
-  // ======== LISTA COM ESPAÇO PARA O MENU ========
   productList: {
     paddingHorizontal: 20,
   },
   productListContent: {
-    paddingBottom: 30, // Espaço extra na parte inferior da lista
+    paddingBottom: 30,
   },
-
-  // ======== TAB BAR ========
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#1e1e1e',
@@ -775,8 +741,6 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontWeight: 'bold',
   },
-
-  // ======== ESTATÍSTICAS ========
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -801,8 +765,6 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 2,
   },
-
-  // ======== BUSCA ========
   searchContainer: {
     paddingHorizontal: 20,
     marginBottom: 10,
@@ -821,8 +783,6 @@ const styles = StyleSheet.create({
     padding: 12,
     color: '#fff',
   },
-
-  // ======== FILTRO ========
   filterSection: {
     paddingHorizontal: 20,
     marginBottom: 15,
@@ -860,8 +820,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-
-  // ======== LISTA DE PRODUTOS ========
   productCard: {
     backgroundColor: '#1e1e1e',
     padding: 15,
@@ -903,39 +861,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 4,
   },
   productPrice: {
     color: '#4CD964',
     fontSize: 14,
     fontWeight: 'bold',
   },
-  productStock: {
-    color: '#fff',
+  productDescription: {
+    color: '#aaa',
     fontSize: 12,
   },
-  
-  lowStockBadge: {
-    backgroundColor: '#FF9500',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  lowStockText: {
-    color: '#FF9500',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  productSales: {
-    fontSize: 11,
-    color: '#888',
-    marginTop: 4,
-  },
-
   deleteButton: {
     padding: 8,
   },
-
-  // ======== EMPTY STATE ========
   emptyState: {
     flex: 1,
     justifyContent: 'center',
@@ -955,8 +894,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-
-  // ======== FORM / CADASTRO ========
   form: {
     padding: 20,
   },
@@ -978,17 +915,9 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
   },
-
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
   inputGroup: {
-    flex: 1,
-    marginRight: 10,
+    marginBottom: 15,
   },
-
-  // ======== CATEGORIAS ========
   categories: {
     marginBottom: 15,
   },
@@ -1013,8 +942,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-
-  // ======== UPLOAD DE IMAGEM ========
   imageUpload: {
     height: 150,
     backgroundColor: '#1e1e1e',
@@ -1054,28 +981,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-
-  // ======== BOTÃO CADASTRAR ========
-  addButton: {
-    marginTop: 10,
+  publishSection: {
+    marginTop: 30,
+    alignItems: 'center',
+  },
+  publishButton: {
     backgroundColor: '#007AFF',
-    paddingVertical: 14,
-    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 30,
+    borderRadius: 12,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 8,
+    gap: 12,
+    minWidth: '80%',
+  },
+  publishButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   disabledButton: {
     backgroundColor: '#666',
+    opacity: 0.6,
   },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  helperText: {
+    color: '#FF9500',
+    fontSize: 12,
+    marginTop: 8,
+    textAlign: 'center',
   },
-
-  // ======== MODAL ========
   modalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.8)',
@@ -1127,8 +1062,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-
-  // ======== LOADING ========
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
